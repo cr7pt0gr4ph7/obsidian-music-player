@@ -1,18 +1,21 @@
-import { Notice, Plugin } from 'obsidian';
+import { Plugin, setIcon } from 'obsidian';
 import { DEFAULT_SETTINGS, MusicPlayerPluginSettings, MusicPlayerSettingsTab } from './Settings';
 import { SourceHandlerManager } from './backend/SourceHandlerManager';
 import { SpotifyAuthHandler } from './backend/handlers/SpotifyAuthHandler';
+import { SourceHandler } from './backend/SourceHandler';
+import { PlayerState, SpotifyLinkHandler } from './backend/handlers/SpotifyLinkHandler';
 
 export default class MusicPlayerPlugin extends Plugin {
 	isLoaded: boolean;
-	handlers: SourceHandlerManager;
+	handlers: SpotifyLinkHandler;
 	settings: MusicPlayerPluginSettings;
 	auth: SpotifyAuthHandler;
+	onUpdatePlayerState: () => void;
 
 	async onload() {
 		await this.loadSettings();
 
-		this.handlers = new SourceHandlerManager(this);
+		this.handlers = new SpotifyLinkHandler(this);
 		this.auth = new SpotifyAuthHandler(this);
 
 		// Register a protocol handler to intercept the Spotify OAuth 2.0 authorization flow
@@ -21,23 +24,65 @@ export default class MusicPlayerPlugin extends Plugin {
 		});
 
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('play-circle', 'Open music player', (evt: MouseEvent) => {
-			this.openMusicPlayer();
+		const ribbonIconEl = this.addRibbonIcon('play-circle', 'Open music player', async (evt: MouseEvent) => {
+			let state = await this.handlers.getPlayerState();
+			switch (state) {
+				case PlayerState.Playing:
+					this.handlers.pausePlayback();
+					setIcon(ribbonIconEl, 'pause-circle');
+					break;
+				case PlayerState.Paused:
+					this.handlers.resumePlayback();
+					setIcon(ribbonIconEl, 'play-circle');
+					break;
+				case PlayerState.Disconnected:
+					setIcon(ribbonIconEl, 'circle');
+					break;
+			}
 		});
 
 		// Perform additional things with the ribbon
 		ribbonIconEl.addClass('embedded-music-player-ribbon');
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
+		this.onUpdatePlayerState = async () => {
+			let state = await this.handlers.getPlayerState();
+			switch (state) {
+				case PlayerState.Playing:
+					setIcon(ribbonIconEl, 'play-circle');
+					break;
+				case PlayerState.Paused:
+					setIcon(ribbonIconEl, 'pause-circle');
+					break;
+				case PlayerState.Disconnected:
+					setIcon(ribbonIconEl, 'circle');
+					break;
+			}
+		};
 
-		// This adds a simple command that can be triggered anywhere
+		// Periodically update the player state
+		this.registerInterval(window.setInterval(() => {
+			this?.onUpdatePlayerState();
+		}, 2000));
+
+		// This adds a few simple commands that can be triggered anywhere
 		this.addCommand({
 			id: 'open-music-player',
 			name: 'Open Music Player',
 			callback: () => this.openMusicPlayer()
 		});
+
+		this.addCommand({
+			id: 'resume-music',
+			name: 'Resume Playback',
+			callback: () => this.handlers.resumePlayback()
+		});
+
+		this.addCommand({
+			id: 'pause-music',
+			name: 'Pause Playback',
+			callback: () => this.handlers.pausePlayback()
+		});
+
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new MusicPlayerSettingsTab(this.app, this));

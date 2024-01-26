@@ -1,6 +1,6 @@
 import { AccessToken, AuthorizationCodeWithPKCEStrategy, ICachable, InMemoryCachingStrategy, LocalStorageCachingStrategy, SpotifyApi } from "@spotify/web-api-ts-sdk";
 import MusicPlayerPlugin from "../../main";
-import { ObsidianProtocolData } from "obsidian";
+import { Notice, ObsidianProtocolData } from "obsidian";
 
 interface SpotifyRedirectParameters {
     code: string;
@@ -21,7 +21,7 @@ export class SpotifyAuthHandler {
         if (!this.sdk) {
             var clientId = 'e42b562de94244ab94dc08303fc2b23a';
             var redirectUri = 'obsidian://music-player-auth-flow';
-            var scopes = ['user-modify-playback-state'];
+            var scopes = ['user-modify-playback-state', 'user-read-playback-state'];
             this.sdk = SpotifyApi.withUserAuthorization(clientId, redirectUri, scopes, {
                 cachingStrategy: this.cache
             });
@@ -34,7 +34,8 @@ export class SpotifyAuthHandler {
 
     async receiveRedirect(parameters: SpotifyRedirectParameters) {
         console.debug(`Received auth flow parameters`);
-        await this.verifyAndExchangeCode(parameters.code);;
+        await this.verifyAndExchangeCode(parameters.code);
+        new Notice("Spotify: Successfully authenticated");
     }
 
     private async verifyAndExchangeCode(code: string) {
