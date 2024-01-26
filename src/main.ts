@@ -1,8 +1,7 @@
-import { Notice, Plugin, setIcon } from 'obsidian';
+import { Plugin, setIcon } from 'obsidian';
 import { DEFAULT_SETTINGS, MusicPlayerPluginSettings, MusicPlayerSettingsTab } from './Settings';
 import { SpotifyAuthHandler } from './backend/handlers/SpotifyAuthHandler';
 import { PlayerAction, PlayerState, SourceHandler } from './backend/SourceHandler';
-import { SpotifyLinkHandler } from './backend/handlers/SpotifyLinkHandler';
 import { SourceHandlerManager } from './backend/SourceHandlerManager';
 
 export default class MusicPlayerPlugin extends Plugin {
@@ -23,17 +22,8 @@ export default class MusicPlayerPlugin extends Plugin {
 			this.auth.receiveObsidianProtocolAction(parameters);
 		});
 
-
-		// Add a status bar item (not available on mobile)
-		const statusBarItemEl = this.addStatusBarItem();
-		const statusBarIconEl = statusBarItemEl.createSpan();
-		setIcon(statusBarIconEl, 'play');
-		statusBarIconEl.setCssProps({ 'padding-right': '4px' });
-		const statusBarTextEl = statusBarItemEl.createSpan();
-
-		// Create an icon in the left ribbon
-		const defaultIconLabel = 'Pause / Resume music\n(Ctrl: Prev. Track / Shift: Next Track)';
-		const ribbonIconEl = this.addRibbonIcon('play-circle', defaultIconLabel, async (evt: MouseEvent) => {
+		// Click handler for the icons
+		const onIconClicked = async (evt: MouseEvent) => {
 			if (evt.ctrlKey) {
 				await this.handlers.performAction(PlayerAction.SkipToPrevious);
 			} else if (evt.shiftKey) {
@@ -62,7 +52,20 @@ export default class MusicPlayerPlugin extends Plugin {
 						break;
 				}
 			}
-		});
+		};
+
+		// Add a status bar item (not available on mobile)
+		const statusBarItemEl = this.addStatusBarItem();
+		statusBarItemEl.addClass('mod-clickable');
+		const statusBarIconEl = statusBarItemEl.createSpan();
+		setIcon(statusBarIconEl, 'play');
+		statusBarIconEl.setCssProps({ 'padding-right': '4px' });
+		const statusBarTextEl = statusBarItemEl.createSpan();
+		statusBarItemEl.addEventListener('click', onIconClicked);
+
+		// Create an icon in the left ribbon
+		const defaultIconLabel = 'Pause / Resume music\n(Ctrl: Prev. Track / Shift: Next Track)';
+		const ribbonIconEl = this.addRibbonIcon('play-circle', defaultIconLabel, onIconClicked);
 
 		const setPlayerStateIcon = (state: PlayerState) => {
 			ribbonIconEl.removeClasses([
