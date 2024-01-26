@@ -39,8 +39,7 @@ export class SourceHandlerManager implements SourceHandler {
 		for (const h of this.handlers) {
 			const state = await h.getPlayerState();
 			if (state === PlayerState.Playing) {
-				// Remember this player as the active player,
-				// until the user 
+				// Remember this player as the active player
 				this.activeHandler = h;
 				return state;
 			}
@@ -52,13 +51,28 @@ export class SourceHandlerManager implements SourceHandler {
 		return PlayerState.Disconnected;
 	}
 
+	async determineActiveHandler(): Promise<SourceHandler | null> {
+		if (this.activeHandler) {
+			return this.activeHandler;
+		}
+
+		for (const h of this.handlers) {
+			const state = await h.getPlayerState();
+			if (state === PlayerState.Playing) {
+				// Remember this player as the active player
+				this.activeHandler = h;
+				return h
+			}
+		}
+
+		return null;
+	}
+
 	async getPlayerTrack(): Promise<{ title: string; artists: string[]; } | null> {
-		// TODO: determineActivePlayer()
-		return await this.activeHandler?.getPlayerTrack(); 
+		return await (await this.determineActiveHandler())?.getPlayerTrack() ?? null;
 	}
 
 	async performAction(action: PlayerAction): Promise<void> {
-		// TODO: determineActivePlayer()
-		return await this.activeHandler?.performAction(action);
+		return await (await this.determineActiveHandler())?.performAction(action);
 	}
 }
