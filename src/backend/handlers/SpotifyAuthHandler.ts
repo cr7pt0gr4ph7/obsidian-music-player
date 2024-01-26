@@ -26,6 +26,7 @@ export class SpotifyAuthHandler {
                 cachingStrategy: this.cache
             });
         }
+        await this.sdk.currentUser.profile();
     }
 
     receiveObsidianProtocolAction(parameters: ObsidianProtocolData) {
