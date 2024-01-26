@@ -1,4 +1,4 @@
-import { AccessToken, AuthorizationCodeWithPKCEStrategy, ICachable, InMemoryCachingStrategy, LocalStorageCachingStrategy, SpotifyApi } from "@spotify/web-api-ts-sdk";
+import { AccessToken, AuthorizationCodeWithPKCEStrategy, LocalStorageCachingStrategy, SpotifyApi } from "@spotify/web-api-ts-sdk";
 import MusicPlayerPlugin from "../../main";
 import { Notice, ObsidianProtocolData } from "obsidian";
 

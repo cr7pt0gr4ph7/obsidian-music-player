@@ -1,22 +1,6 @@
 import MusicPlayerPlugin from "../../main";
-import { SourceHandler } from "../SourceHandler";
+import { PlayerAction, PlayerState, SourceHandler } from "../SourceHandler";
 import { Notice } from "obsidian";
-import { SpotifyApi, AccessToken } from "@spotify/web-api-ts-sdk";
-import PlayerEndpoints from "@spotify/web-api-ts-sdk/dist/mjs/endpoints/PlayerEndpoints";
-
-export enum PlayerState {
-	Disconnected = 'disconnected',
-	Playing = 'playing',
-	Paused = 'paused',
-	Stopped = 'stopped',
-}
-
-export enum PlayerAction {
-	Pause = 'pause',
-	Resume = 'resume',
-	SkipToPrevious = 'previous',
-	SkipToNext = 'next',
-}
 
 export class SpotifyLinkHandler implements SourceHandler {
 	plugin: MusicPlayerPlugin;
@@ -73,22 +57,6 @@ export class SpotifyLinkHandler implements SourceHandler {
 		} catch (e: any) {
 			new Notice(e.toString());
 		}
-	}
-
-	async previousTrack() {
-		this.performAction(PlayerAction.SkipToPrevious);
-	}
-
-	async nextTrack() {
-		this.performAction(PlayerAction.SkipToNext);
-	}
-
-	async pausePlayback() {
-		this.performAction(PlayerAction.Pause);
-	}
-
-	async resumePlayback() {
-		this.performAction(PlayerAction.Resume);
 	}
 
 	async getPlayerTrack(): Promise<{ title: string, artists: string[] } | null> {

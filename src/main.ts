@@ -1,13 +1,12 @@
 import { Plugin, setIcon } from 'obsidian';
 import { DEFAULT_SETTINGS, MusicPlayerPluginSettings, MusicPlayerSettingsTab } from './Settings';
-import { SourceHandlerManager } from './backend/SourceHandlerManager';
 import { SpotifyAuthHandler } from './backend/handlers/SpotifyAuthHandler';
-import { SourceHandler } from './backend/SourceHandler';
-import { PlayerAction, PlayerState, SpotifyLinkHandler } from './backend/handlers/SpotifyLinkHandler';
+import { PlayerAction, PlayerState, SourceHandler } from './backend/SourceHandler';
+import { SpotifyLinkHandler } from './backend/handlers/SpotifyLinkHandler';
 
 export default class MusicPlayerPlugin extends Plugin {
 	isLoaded: boolean;
-	handlers: SpotifyLinkHandler;
+	handlers: SourceHandler;
 	settings: MusicPlayerPluginSettings;
 	auth: SpotifyAuthHandler;
 	onUpdatePlayerState: () => void;
@@ -23,7 +22,15 @@ export default class MusicPlayerPlugin extends Plugin {
 			this.auth.receiveObsidianProtocolAction(parameters);
 		});
 
-		// This creates an icon in the left ribbon.
+		
+		// Add a status bar item (not available on mobile)
+		const statusBarItemEl = this.addStatusBarItem();
+		const statusBarIconEl = statusBarItemEl.createSpan();
+		setIcon(statusBarIconEl, 'play');
+		statusBarIconEl.setCssProps({'padding-right': '4px'});
+		const statusBarTextEl = statusBarItemEl.createSpan();
+
+		// Create an icon in the left ribbon
 		const defaultIconLabel = 'Pause / Resume music\n(Ctrl: Prev. Track / Shift: Next Track)';
 		const ribbonIconEl = this.addRibbonIcon('play-circle', defaultIconLabel, async (evt: MouseEvent) => {
 			if (evt.ctrlKey) {
@@ -44,6 +51,10 @@ export default class MusicPlayerPlugin extends Plugin {
 						await this.handlers.performAction(PlayerAction.Resume);
 						// See note above on quick visual feedback & failure handling.
 						setPlayerStateIcon(PlayerState.Playing);
+						break;
+					case PlayerState.Disconnected:
+						await this.auth.performAuthorization();
+						setPlayerStateIcon(state);
 						break;
 					default:
 						setPlayerStateIcon(state);
@@ -85,21 +96,25 @@ export default class MusicPlayerPlugin extends Plugin {
 
 		function setPlayerLabel(label: string | null) {
 			if (!label || label.length === 0) {
-				label = defaultIconLabel;
+				label = null;
+				statusBarItemEl.hide();
+			} else {
+				statusBarItemEl.show();
 			}
-			ribbonIconEl.setAttribute("aria-label", label);
+			ribbonIconEl.setAttribute("aria-label", label ?? defaultIconLabel);
+			statusBarTextEl.setText(label ?? "");
 		}
 
 		// Perform additional things with the ribbon
 		ribbonIconEl.addClass('embedded-music-player-ribbon');
 
+		// Periodically update the player state
 		this.onUpdatePlayerState = async () => {
 			setPlayerStateIcon(await this.handlers.getPlayerState());
 			const track = await this.handlers.getPlayerTrack();
-			setPlayerLabel(track ? `${track?.artists.join(', ')} - ${track.title}` : null);
+			setPlayerLabel(track ? `${track?.artists.join(', ')} – ${track.title}` : null);
 		};
 
-		// Periodically update the player state
 		this.registerInterval(window.setInterval(() => {
 			this?.onUpdatePlayerState();
 		}, 2000));
@@ -108,13 +123,13 @@ export default class MusicPlayerPlugin extends Plugin {
 		this.addCommand({
 			id: 'resume-music',
 			name: 'Resume Playback',
-			callback: () => this.handlers.resumePlayback()
+			callback: () => this.handlers.performAction(PlayerAction.Resume)
 		});
 
 		this.addCommand({
 			id: 'pause-music',
 			name: 'Pause Playback',
-			callback: () => this.handlers.pausePlayback()
+			callback: () => this.handlers.performAction(PlayerAction.Pause)
 		});
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
