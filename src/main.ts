@@ -4,6 +4,7 @@ import { SourceHandlerManager } from './backend/SourceHandlerManager';
 import { getLinkUrlFromElement, getLinkUrlFromLivePreview } from './utils/LinkUtils';
 
 export default class MusicPlayerPlugin extends Plugin {
+	isLoaded: boolean;
 	handlers: SourceHandlerManager;
 	settings: MusicPlayerPluginSettings;
 
@@ -35,25 +36,13 @@ export default class MusicPlayerPlugin extends Plugin {
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new MusicPlayerSettingsTab(this.app, this));
 
-		// This is a click event handler
-		const clickEvt = async (evt: MouseEvent) => {
-			const el = evt.target as HTMLElement;
-
-			var href = getLinkUrlFromElement(el) ?? getLinkUrlFromLivePreview(this.app, evt);
-			if (href && this.handlers.isSupported(href)) {
-				evt.preventDefault();
-				await this.handlers.openLink(href);
-			}
-		};
-
-		// This registers a click event
-		this.registerDomEvent(document, "click", (evt: MouseEvent) => {
-			return clickEvt(evt);
-		});
+		this.hookWindowOpen();
+		this.isLoaded = true;
 	}
 
 	onunload() {
-
+		this.isLoaded = false;
+		this.unhookWindowOpen();
 	}
 
 	async loadSettings() {
@@ -66,5 +55,40 @@ export default class MusicPlayerPlugin extends Plugin {
 
 	openMusicPlayer() {
 
+	}
+
+	private hookWindowOpen() {
+		console.debug("Music Player | Installing hook for window.open()");
+
+		// This is very hacky, but until Obsidian provides a native extension point
+		// for intercepting link navigations that works in all cases (live preview, reading view, source view...),
+		// this is actually the best we can do.
+		// @ts-expect-error
+		if (!window.__original_open) {
+			// @ts-expect-error
+			window.__original_open = window.open;
+		}
+		window.open = this.onWindowOpenCalled.bind(this);
+	}
+
+	private onWindowOpenCalled(url?: string | URL, target?: string, features?: string): WindowProxy | null {
+		if (this.isLoaded && url && this.handlers.isSupported(url.toString())) {
+			// TODO: openLink returns a promise, which we then ignore...
+			this.handlers.openLink(url.toString());
+			return null;
+		}
+
+		// @ts-expect-error
+		return window.__original_open(url, target, features);
+	}
+
+	private unhookWindowOpen() {
+		console.debug("Music Player | Uninstalling hook for window.open()");
+
+		// @ts-expect-error
+		if (window.__original_open) {
+			// @ts-expect-error
+			window.open = window.__original_open;
+		}
 	}
 }
