@@ -1,8 +1,9 @@
-import { Plugin, setIcon } from 'obsidian';
+import { Notice, Plugin, setIcon } from 'obsidian';
 import { DEFAULT_SETTINGS, MusicPlayerPluginSettings, MusicPlayerSettingsTab } from './Settings';
 import { SpotifyAuthHandler } from './backend/handlers/SpotifyAuthHandler';
 import { PlayerAction, PlayerState, SourceHandler } from './backend/SourceHandler';
 import { SpotifyLinkHandler } from './backend/handlers/SpotifyLinkHandler';
+import { SourceHandlerManager } from './backend/SourceHandlerManager';
 
 export default class MusicPlayerPlugin extends Plugin {
 	isLoaded: boolean;
@@ -14,7 +15,7 @@ export default class MusicPlayerPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		this.handlers = new SpotifyLinkHandler(this);
+		this.handlers = new SourceHandlerManager(this);
 		this.auth = new SpotifyAuthHandler(this);
 
 		// Register a protocol handler to intercept the Spotify OAuth 2.0 authorization flow
@@ -22,12 +23,12 @@ export default class MusicPlayerPlugin extends Plugin {
 			this.auth.receiveObsidianProtocolAction(parameters);
 		});
 
-		
+
 		// Add a status bar item (not available on mobile)
 		const statusBarItemEl = this.addStatusBarItem();
 		const statusBarIconEl = statusBarItemEl.createSpan();
 		setIcon(statusBarIconEl, 'play');
-		statusBarIconEl.setCssProps({'padding-right': '4px'});
+		statusBarIconEl.setCssProps({ 'padding-right': '4px' });
 		const statusBarTextEl = statusBarItemEl.createSpan();
 
 		// Create an icon in the left ribbon
@@ -63,44 +64,60 @@ export default class MusicPlayerPlugin extends Plugin {
 			}
 		});
 
-		function setPlayerStateIcon(state: PlayerState) {
+		const setPlayerStateIcon = (state: PlayerState) => {
 			ribbonIconEl.removeClasses([
 				'music-player-ribbon-playing',
 				'music-player-ribbon-paused',
 				'music-player-ribbon-disconnected',
 			]);
 
+			if (!this.settings.showPlayStateInIcon) {
+				setIcon(ribbonIconEl, 'play-circle');
+				ribbonIconEl.setCssProps({ 'color': '' });
+				return;
+			}
+
+			var color: string | null = null;
+
 			switch (state) {
 				case PlayerState.Playing:
 					setIcon(ribbonIconEl, 'play-circle');
 					ribbonIconEl.addClass('music-player-ribbon-playing');
-					ribbonIconEl.setCssProps({ 'color': 'green' });
+					color = 'green';
 					break;
 				case PlayerState.Paused:
 					setIcon(ribbonIconEl, 'pause-circle');
 					ribbonIconEl.addClass('music-player-ribbon-paused');
-					ribbonIconEl.setCssProps({ 'color': 'orange' });
+					color = 'orange';
 					break;
 				case PlayerState.Stopped:
 					setIcon(ribbonIconEl, 'stop-circle');
 					ribbonIconEl.addClass('music-player-ribbon-disconnected');
-					ribbonIconEl.setCssProps({ 'color': '' });
 					break;
 				case PlayerState.Disconnected:
 					setIcon(ribbonIconEl, 'stop-circle');
 					ribbonIconEl.addClass('music-player-ribbon-disconnected');
-					ribbonIconEl.setCssProps({ 'color': '' });
 					break;
 			}
+
+			if (!this.settings.changeIconColor) {
+				color = null;
+			}
+
+			ribbonIconEl.setCssProps({ 'color': color ?? '' });
 		}
 
-		function setPlayerLabel(label: string | null) {
+		const setPlayerLabel = (label: string | null) => {
 			if (!label || label.length === 0) {
 				label = null;
-				statusBarItemEl.hide();
-			} else {
-				statusBarItemEl.show();
 			}
+
+			if (label && this.settings.showTrackInStatusBar) {
+				statusBarItemEl.show();
+			} else {
+				statusBarItemEl.hide();
+			}
+
 			ribbonIconEl.setAttribute("aria-label", label ?? defaultIconLabel);
 			statusBarTextEl.setText(label ?? "");
 		}
