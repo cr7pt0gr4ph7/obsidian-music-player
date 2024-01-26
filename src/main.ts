@@ -1,24 +1,28 @@
 import { Notice, Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS, MusicPlayerPluginSettings, MusicPlayerSettingsTab } from './Settings';
 import { SourceHandlerManager } from './backend/SourceHandlerManager';
-import { SpotifyPlayer } from './player/Spotify';
+import { SpotifyAuthHandler } from './backend/handlers/SpotifyAuthHandler';
 
 export default class MusicPlayerPlugin extends Plugin {
 	isLoaded: boolean;
-	player: SpotifyPlayer;
 	handlers: SourceHandlerManager;
 	settings: MusicPlayerPluginSettings;
+	auth: SpotifyAuthHandler;
 
 	async onload() {
 		await this.loadSettings();
 
 		this.handlers = new SourceHandlerManager(this);
-		this.player = new SpotifyPlayer();
+		this.auth = new SpotifyAuthHandler(this);
+
+		// Register a protocol handler to intercept the Spotify OAuth 2.0 authorization flow
+		this.registerObsidianProtocolHandler('music-player-auth-flow', parameters => {
+			this.auth.receiveObsidianProtocolAction(parameters);
+		});
 
 		// This creates an icon in the left ribbon.
 		const ribbonIconEl = this.addRibbonIcon('play-circle', 'Open music player', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
+			this.openMusicPlayer();
 		});
 
 		// Perform additional things with the ribbon
@@ -40,11 +44,9 @@ export default class MusicPlayerPlugin extends Plugin {
 
 		this.hookWindowOpen();
 		this.isLoaded = true;
-		this.player.load();
 	}
 
 	onunload() {
-		this.player.unload();
 		this.isLoaded = false;
 		this.unhookWindowOpen();
 	}
@@ -57,8 +59,8 @@ export default class MusicPlayerPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	openMusicPlayer() {
-
+	async openMusicPlayer() {
+		await this.auth.performAuthorization();
 	}
 
 	private hookWindowOpen() {
