@@ -91,6 +91,39 @@ export class SpotifyLinkHandler implements SourceHandler {
 		this.performAction(PlayerAction.Resume);
 	}
 
+	async getPlayerTrack(): Promise<{ title: string, artists: string[] } | null> {
+		// Do not request the user to authenticate if not authenticated here already.
+		// This function is called from a periodic notification hook, and it would
+		// be really annoying for the Spotify login screen to pop up every 5 seconds...
+		if (!await this.sdk?.getAccessToken()) {
+			return null;
+		}
+
+		try {
+			const state = await this.sdk.player.getCurrentlyPlayingTrack();
+			if (!state) {
+				return null;
+			}
+			const track = await this.sdk.tracks.get(state?.item?.id);
+			return {
+				title: track.name,
+				artists: track.artists.map(a => a.name)
+			};
+		} catch (e: any) {
+			new Notice(e.toString());
+			if (e instanceof Error) {
+				// This is a total hack. It exists to invalidate a token that has expired,
+				// to avoid retrying an infinite number of times with an expired token.
+				// We should replace this logic with a custom SdkConfig.responseValidator.
+				if (e.message.contains("Bad or expired token.")) {
+					new Notice("Invalidating token");
+					this.sdk.logOut();
+				}
+			}
+			return null;
+		}
+	}
+
 	async getPlayerState(): Promise<PlayerState> {
 		// Do not request the user to authenticate if not authenticated here already.
 		// This function is called from a periodic notification hook, and it would

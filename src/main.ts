@@ -24,7 +24,8 @@ export default class MusicPlayerPlugin extends Plugin {
 		});
 
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('play-circle', 'Pause/resume music', async (evt: MouseEvent) => {
+		const defaultIconLabel = 'Pause / Resume music\n(Ctrl: Prev. Track / Shift: Next Track)';
+		const ribbonIconEl = this.addRibbonIcon('play-circle', defaultIconLabel, async (evt: MouseEvent) => {
 			if (evt.ctrlKey) {
 				await this.handlers.performAction(PlayerAction.SkipToPrevious);
 			} else if (evt.shiftKey) {
@@ -82,11 +83,20 @@ export default class MusicPlayerPlugin extends Plugin {
 			}
 		}
 
+		function setPlayerLabel(label: string | null) {
+			if (!label || label.length === 0) {
+				label = defaultIconLabel;
+			}
+			ribbonIconEl.setAttribute("aria-label", label);
+		}
+
 		// Perform additional things with the ribbon
 		ribbonIconEl.addClass('embedded-music-player-ribbon');
 
 		this.onUpdatePlayerState = async () => {
 			setPlayerStateIcon(await this.handlers.getPlayerState());
+			const track = await this.handlers.getPlayerTrack();
+			setPlayerLabel(track ? `${track?.artists.join(', ')} - ${track.title}` : null);
 		};
 
 		// Periodically update the player state
