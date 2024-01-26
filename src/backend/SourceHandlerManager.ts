@@ -52,13 +52,13 @@ export class SourceHandlerManager implements SourceHandler {
 		return PlayerState.Disconnected;
 	}
 
-	getPlayerTrack(): Promise<{ title: string; artists: string[]; } | null> {
-		// Only consider the activ
+	async getPlayerTrack(): Promise<{ title: string; artists: string[]; } | null> {
 		// TODO: determineActivePlayer()
-		return this.activeHandler?.getPlayerTrack(); 
+		return await this.activeHandler?.getPlayerTrack(); 
 	}
 
 	async performAction(action: PlayerAction): Promise<void> {
-		throw new Error("Method not implemented.");
+		// TODO: determineActivePlayer()
+		return await this.activeHandler?.performAction(action);
 	}
 }
