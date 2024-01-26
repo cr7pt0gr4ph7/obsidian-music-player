@@ -1,8 +1,9 @@
 import MusicPlayerPlugin from "src/main";
 import { SourceHandler } from "../SourceHandler";
 import { Notice } from "obsidian";
+import { SpotifyApi, AccessToken } from "@spotify/web-api-ts-sdk";
 
-export class SpotifyHandler implements SourceHandler {
+export class SpotifyLinkHandler implements SourceHandler {
 	plugin: MusicPlayerPlugin;
 
 	constructor(plugin: MusicPlayerPlugin) {

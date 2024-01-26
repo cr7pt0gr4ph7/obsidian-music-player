@@ -1,6 +1,6 @@
 import MusicPlayerPlugin from "../main";
 import { SourceHandler } from "./SourceHandler";
-import { SpotifyHandler } from "./handlers/SpotifyHandler";
+import { SpotifyLinkHandler } from "./handlers/SpotifyLinkHandler";
 
 export class SourceHandlerManager implements SourceHandler {
 	plugin: MusicPlayerPlugin;
@@ -8,7 +8,7 @@ export class SourceHandlerManager implements SourceHandler {
 
 	constructor(plugin: MusicPlayerPlugin) {
 		this.handlers = [
-			new SpotifyHandler(plugin)
+			new SpotifyLinkHandler(plugin)
 		]
 	}
 
