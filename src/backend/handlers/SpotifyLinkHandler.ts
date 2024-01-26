@@ -2,11 +2,20 @@ import MusicPlayerPlugin from "../../main";
 import { SourceHandler } from "../SourceHandler";
 import { Notice } from "obsidian";
 import { SpotifyApi, AccessToken } from "@spotify/web-api-ts-sdk";
+import PlayerEndpoints from "@spotify/web-api-ts-sdk/dist/mjs/endpoints/PlayerEndpoints";
 
 export enum PlayerState {
 	Disconnected = 'disconnected',
 	Playing = 'playing',
-	Paused = 'paused'
+	Paused = 'paused',
+	Stopped = 'stopped',
+}
+
+export enum PlayerAction {
+	Pause = 'pause',
+	Resume = 'resume',
+	SkipToPrevious = 'previous',
+	SkipToNext = 'next',
 }
 
 export class SpotifyLinkHandler implements SourceHandler {
@@ -40,24 +49,46 @@ export class SpotifyLinkHandler implements SourceHandler {
 		return this.plugin.auth.sdk;
 	}
 
-	async pausePlayback() {
-		new Notice("Pausing playback");
+	async performAction(action: PlayerAction) {
 		await this.plugin.auth.performAuthorization();
 		try {
-			await this.sdk.player.pausePlayback("");
+			switch (action) {
+				case PlayerAction.SkipToPrevious:
+					new Notice("Previous track");
+					await this.sdk.player.skipToPrevious("");
+					break;
+				case PlayerAction.SkipToNext:
+					new Notice("Next track");
+					await this.sdk.player.skipToNext("");
+					break;
+				case PlayerAction.Pause:
+					new Notice("Pausing playback");
+					await this.sdk.player.pausePlayback("");
+					break;
+				case PlayerAction.Resume:
+					new Notice("Resuming playback");
+					await this.sdk.player.startResumePlayback("");
+					break;
+			}
 		} catch (e: any) {
 			new Notice(e.toString());
 		}
 	}
 
+	async previousTrack() {
+		this.performAction(PlayerAction.SkipToPrevious);
+	}
+
+	async nextTrack() {
+		this.performAction(PlayerAction.SkipToNext);
+	}
+
+	async pausePlayback() {
+		this.performAction(PlayerAction.Pause);
+	}
+
 	async resumePlayback() {
-		new Notice("Resuming playback");
-		await this.plugin.auth.performAuthorization();
-		try {
-			await this.sdk.player.startResumePlayback("");
-		} catch (e: any) {
-			new Notice(e.toString());
-		}
+		this.performAction(PlayerAction.Resume);
 	}
 
 	async getPlayerState(): Promise<PlayerState> {

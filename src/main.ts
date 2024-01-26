@@ -3,7 +3,7 @@ import { DEFAULT_SETTINGS, MusicPlayerPluginSettings, MusicPlayerSettingsTab } f
 import { SourceHandlerManager } from './backend/SourceHandlerManager';
 import { SpotifyAuthHandler } from './backend/handlers/SpotifyAuthHandler';
 import { SourceHandler } from './backend/SourceHandler';
-import { PlayerState, SpotifyLinkHandler } from './backend/handlers/SpotifyLinkHandler';
+import { PlayerAction, PlayerState, SpotifyLinkHandler } from './backend/handlers/SpotifyLinkHandler';
 
 export default class MusicPlayerPlugin extends Plugin {
 	isLoaded: boolean;
@@ -24,39 +24,69 @@ export default class MusicPlayerPlugin extends Plugin {
 		});
 
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('play-circle', 'Open music player', async (evt: MouseEvent) => {
-			let state = await this.handlers.getPlayerState();
-			switch (state) {
-				case PlayerState.Playing:
-					this.handlers.pausePlayback();
-					setIcon(ribbonIconEl, 'pause-circle');
-					break;
-				case PlayerState.Paused:
-					this.handlers.resumePlayback();
-					setIcon(ribbonIconEl, 'play-circle');
-					break;
-				case PlayerState.Disconnected:
-					setIcon(ribbonIconEl, 'circle');
-					break;
+		const ribbonIconEl = this.addRibbonIcon('play-circle', 'Pause/resume music', async (evt: MouseEvent) => {
+			if (evt.ctrlKey) {
+				await this.handlers.performAction(PlayerAction.SkipToPrevious);
+			} else if (evt.shiftKey) {
+				await this.handlers.performAction(PlayerAction.SkipToNext);
+			} else {
+				let state = await this.handlers.getPlayerState();
+				switch (state) {
+					case PlayerState.Playing:
+						await this.handlers.performAction(PlayerAction.Pause);
+						// Immediately update the icon so the user quickly gets visual feedback.
+						// If the state change fails for whatever reason, the icon will be "wrong"
+						// for a short period, until the next periodic update takes place.
+						setPlayerStateIcon(PlayerState.Paused);
+						break;
+					case PlayerState.Paused:
+						await this.handlers.performAction(PlayerAction.Resume);
+						// See note above on quick visual feedback & failure handling.
+						setPlayerStateIcon(PlayerState.Playing);
+						break;
+					default:
+						setPlayerStateIcon(state);
+						break;
+				}
 			}
 		});
+
+		function setPlayerStateIcon(state: PlayerState) {
+			ribbonIconEl.removeClasses([
+				'music-player-ribbon-playing',
+				'music-player-ribbon-paused',
+				'music-player-ribbon-disconnected',
+			]);
+
+			switch (state) {
+				case PlayerState.Playing:
+					setIcon(ribbonIconEl, 'play-circle');
+					ribbonIconEl.addClass('music-player-ribbon-playing');
+					ribbonIconEl.setCssProps({ 'color': 'green' });
+					break;
+				case PlayerState.Paused:
+					setIcon(ribbonIconEl, 'pause-circle');
+					ribbonIconEl.addClass('music-player-ribbon-paused');
+					ribbonIconEl.setCssProps({ 'color': 'orange' });
+					break;
+				case PlayerState.Stopped:
+					setIcon(ribbonIconEl, 'stop-circle');
+					ribbonIconEl.addClass('music-player-ribbon-disconnected');
+					ribbonIconEl.setCssProps({ 'color': '' });
+					break;
+				case PlayerState.Disconnected:
+					setIcon(ribbonIconEl, 'stop-circle');
+					ribbonIconEl.addClass('music-player-ribbon-disconnected');
+					ribbonIconEl.setCssProps({ 'color': '' });
+					break;
+			}
+		}
 
 		// Perform additional things with the ribbon
 		ribbonIconEl.addClass('embedded-music-player-ribbon');
 
 		this.onUpdatePlayerState = async () => {
-			let state = await this.handlers.getPlayerState();
-			switch (state) {
-				case PlayerState.Playing:
-					setIcon(ribbonIconEl, 'play-circle');
-					break;
-				case PlayerState.Paused:
-					setIcon(ribbonIconEl, 'pause-circle');
-					break;
-				case PlayerState.Disconnected:
-					setIcon(ribbonIconEl, 'circle');
-					break;
-			}
+			setPlayerStateIcon(await this.handlers.getPlayerState());
 		};
 
 		// Periodically update the player state
@@ -65,12 +95,6 @@ export default class MusicPlayerPlugin extends Plugin {
 		}, 2000));
 
 		// This adds a few simple commands that can be triggered anywhere
-		this.addCommand({
-			id: 'open-music-player',
-			name: 'Open Music Player',
-			callback: () => this.openMusicPlayer()
-		});
-
 		this.addCommand({
 			id: 'resume-music',
 			name: 'Resume Playback',
@@ -82,7 +106,6 @@ export default class MusicPlayerPlugin extends Plugin {
 			name: 'Pause Playback',
 			callback: () => this.handlers.pausePlayback()
 		});
-
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new MusicPlayerSettingsTab(this.app, this));
@@ -102,10 +125,6 @@ export default class MusicPlayerPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-	}
-
-	async openMusicPlayer() {
-		await this.auth.performAuthorization();
 	}
 
 	private hookWindowOpen() {
