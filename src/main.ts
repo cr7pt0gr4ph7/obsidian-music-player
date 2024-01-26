@@ -54,14 +54,25 @@ export default class MusicPlayerPlugin extends Plugin {
 			}
 		};
 
-		// Add a status bar item (not available on mobile)
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.addClass('mod-clickable');
-		const statusBarIconEl = statusBarItemEl.createSpan();
-		setIcon(statusBarIconEl, 'play');
-		statusBarIconEl.setCssProps({ 'padding-right': '4px' });
-		const statusBarTextEl = statusBarItemEl.createSpan();
-		statusBarItemEl.addEventListener('click', onIconClicked);
+		// Add status bar items (not available on mobile)
+		const statusBarPlayIcon = this.addStatusBarItem();
+		statusBarPlayIcon.addClass('mod-clickable');
+		setIcon(statusBarPlayIcon, 'play');
+		statusBarPlayIcon.addEventListener('click', onIconClicked);
+
+		const statusBarTextEl = this.addStatusBarItem();
+		statusBarTextEl.addClass('mod-clickable');
+		statusBarTextEl.addEventListener('click', onIconClicked);
+
+		const statusBarPrevIcon = this.addStatusBarItem();
+		statusBarPrevIcon.addClass('mod-clickable');
+		setIcon(statusBarPrevIcon, 'skip-back');
+		statusBarPrevIcon.addEventListener('click', () => this.handlers.performAction(PlayerAction.SkipToPrevious));
+
+		const statusBarNextIcon = this.addStatusBarItem();
+		statusBarNextIcon.addClass('mod-clickable');
+		setIcon(statusBarNextIcon, 'skip-forward');
+		statusBarNextIcon.addEventListener('click', () => this.handlers.performAction(PlayerAction.SkipToNext));
 
 		// Create an icon in the left ribbon
 		const defaultIconLabel = 'Pause / Resume music\n(Ctrl: Prev. Track / Shift: Next Track)';
@@ -76,6 +87,7 @@ export default class MusicPlayerPlugin extends Plugin {
 
 			if (!this.settings.showPlayStateInIcon) {
 				setIcon(ribbonIconEl, 'play-circle');
+				setIcon(statusBarPlayIcon, 'play');
 				ribbonIconEl.setCssProps({ 'color': '' });
 				return;
 			}
@@ -85,20 +97,24 @@ export default class MusicPlayerPlugin extends Plugin {
 			switch (state) {
 				case PlayerState.Playing:
 					setIcon(ribbonIconEl, 'play-circle');
+					setIcon(statusBarPlayIcon, 'play');
 					ribbonIconEl.addClass('music-player-ribbon-playing');
 					color = 'green';
 					break;
 				case PlayerState.Paused:
 					setIcon(ribbonIconEl, 'pause-circle');
+					setIcon(statusBarPlayIcon, 'pause');
 					ribbonIconEl.addClass('music-player-ribbon-paused');
 					color = 'orange';
 					break;
 				case PlayerState.Stopped:
 					setIcon(ribbonIconEl, 'stop-circle');
+					setIcon(statusBarPlayIcon, 'play');
 					ribbonIconEl.addClass('music-player-ribbon-disconnected');
 					break;
 				case PlayerState.Disconnected:
 					setIcon(ribbonIconEl, 'stop-circle');
+					setIcon(statusBarPlayIcon, 'play');
 					ribbonIconEl.addClass('music-player-ribbon-disconnected');
 					break;
 			}
@@ -116,9 +132,9 @@ export default class MusicPlayerPlugin extends Plugin {
 			}
 
 			if (label && this.settings.showTrackInStatusBar) {
-				statusBarItemEl.show();
+				statusBarTextEl.show();
 			} else {
-				statusBarItemEl.hide();
+				statusBarTextEl.hide();
 			}
 
 			ribbonIconEl.setAttribute("aria-label", label ?? defaultIconLabel);
