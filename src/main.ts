@@ -168,6 +168,18 @@ export default class MusicPlayerPlugin extends Plugin {
 			callback: () => this.handlers.performAction(PlayerAction.Pause)
 		});
 
+		this.addCommand({
+			id: 'skip-to-previous-track',
+			name: 'Previous Track',
+			callback: () => this.handlers.performAction(PlayerAction.SkipToPrevious)
+		});
+
+		this.addCommand({
+			id: 'skip-to-next-track',
+			name: 'Next Track',
+			callback: () => this.handlers.performAction(PlayerAction.SkipToNext)
+		});
+
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new MusicPlayerSettingsTab(this.app, this));
 
