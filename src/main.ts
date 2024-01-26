@@ -1,10 +1,11 @@
-import { App, MarkdownView, Notice, Plugin } from 'obsidian';
+import { Notice, Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS, MusicPlayerPluginSettings, MusicPlayerSettingsTab } from './Settings';
 import { SourceHandlerManager } from './backend/SourceHandlerManager';
-import { getLinkUrlFromElement, getLinkUrlFromLivePreview } from './utils/LinkUtils';
+import { SpotifyPlayer } from './player/Spotify';
 
 export default class MusicPlayerPlugin extends Plugin {
 	isLoaded: boolean;
+	player: SpotifyPlayer;
 	handlers: SourceHandlerManager;
 	settings: MusicPlayerPluginSettings;
 
@@ -12,6 +13,7 @@ export default class MusicPlayerPlugin extends Plugin {
 		await this.loadSettings();
 
 		this.handlers = new SourceHandlerManager(this);
+		this.player = new SpotifyPlayer();
 
 		// This creates an icon in the left ribbon.
 		const ribbonIconEl = this.addRibbonIcon('play-circle', 'Open music player', (evt: MouseEvent) => {
@@ -38,9 +40,11 @@ export default class MusicPlayerPlugin extends Plugin {
 
 		this.hookWindowOpen();
 		this.isLoaded = true;
+		this.player.load();
 	}
 
 	onunload() {
+		this.player.unload();
 		this.isLoaded = false;
 		this.unhookWindowOpen();
 	}
