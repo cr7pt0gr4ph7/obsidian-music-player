@@ -24,15 +24,11 @@ export default class MusicPlayerPlugin extends Plugin {
 		this.registerProtocolHandlers();
 		this.registerStatusBarItems();
 		this.registerRibbonIcon();
+		this.registerCommands();
+		this.addSettingTab(new MusicPlayerSettingsTab(this.app, this));
 
 		// Periodically update the player state
 		this.registerInterval(window.setInterval(() => this?.onUpdatePlayerState(), 2000));
-
-		// This adds a few simple commands that can be triggered anywhere
-		this.registerCommands();
-
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new MusicPlayerSettingsTab(this.app, this));
 
 		// Intercept navigation to external links by hooking existing events
 		this.interceptor = new LinkInterceptor({
