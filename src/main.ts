@@ -1,7 +1,7 @@
 import { Plugin, setIcon } from 'obsidian';
 import { DEFAULT_SETTINGS, MusicPlayerPluginSettings, MusicPlayerSettingsTab } from './Settings';
 import { SpotifyAuthHandler } from './backend/handlers/SpotifyAuthHandler';
-import { PlayerAction, PlayerState, MediaPlayerService } from './backend/MediaPlayerService';
+import { PlayerAction, PlaybackState, MediaPlayerService } from './backend/MediaPlayerService';
 import { MediaPlayerManager } from './backend/MediaPlayerManager';
 
 export default class MusicPlayerPlugin extends Plugin {
@@ -31,19 +31,19 @@ export default class MusicPlayerPlugin extends Plugin {
 			} else {
 				let state = await this.handlers.getPlayerState();
 				switch (state) {
-					case PlayerState.Playing:
+					case PlaybackState.Playing:
 						await this.handlers.performAction(PlayerAction.Pause);
 						// Immediately update the icon so the user quickly gets visual feedback.
 						// If the state change fails for whatever reason, the icon will be "wrong"
 						// for a short period, until the next periodic update takes place.
-						setPlayerStateIcon(PlayerState.Paused);
+						setPlayerStateIcon(PlaybackState.Paused);
 						break;
-					case PlayerState.Paused:
+					case PlaybackState.Paused:
 						await this.handlers.performAction(PlayerAction.Resume);
 						// See note above on quick visual feedback & failure handling.
-						setPlayerStateIcon(PlayerState.Playing);
+						setPlayerStateIcon(PlaybackState.Playing);
 						break;
-					case PlayerState.Disconnected:
+					case PlaybackState.Disconnected:
 						await this.auth.performAuthorization();
 						setPlayerStateIcon(state);
 						break;
@@ -78,7 +78,7 @@ export default class MusicPlayerPlugin extends Plugin {
 		const defaultIconLabel = 'Pause / Resume music\n(Ctrl: Prev. Track / Shift: Next Track)';
 		const ribbonIconEl = this.addRibbonIcon('play-circle', defaultIconLabel, onIconClicked);
 
-		const setPlayerStateIcon = (state: PlayerState) => {
+		const setPlayerStateIcon = (state: PlaybackState) => {
 			ribbonIconEl.removeClasses([
 				'music-player-ribbon-playing',
 				'music-player-ribbon-paused',
@@ -95,24 +95,24 @@ export default class MusicPlayerPlugin extends Plugin {
 			var color: string | null = null;
 
 			switch (state) {
-				case PlayerState.Playing:
+				case PlaybackState.Playing:
 					setIcon(ribbonIconEl, 'play-circle');
 					setIcon(statusBarPlayIcon, 'play');
 					ribbonIconEl.addClass('music-player-ribbon-playing');
 					color = 'green';
 					break;
-				case PlayerState.Paused:
+				case PlaybackState.Paused:
 					setIcon(ribbonIconEl, 'pause-circle');
 					setIcon(statusBarPlayIcon, 'pause');
 					ribbonIconEl.addClass('music-player-ribbon-paused');
 					color = 'orange';
 					break;
-				case PlayerState.Stopped:
+				case PlaybackState.Stopped:
 					setIcon(ribbonIconEl, 'stop-circle');
 					setIcon(statusBarPlayIcon, 'play');
 					ribbonIconEl.addClass('music-player-ribbon-disconnected');
 					break;
-				case PlayerState.Disconnected:
+				case PlaybackState.Disconnected:
 					setIcon(ribbonIconEl, 'stop-circle');
 					setIcon(statusBarPlayIcon, 'play');
 					ribbonIconEl.addClass('music-player-ribbon-disconnected');

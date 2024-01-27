@@ -1,5 +1,5 @@
 import MusicPlayerPlugin from "../../main";
-import { PlayerAction, PlayerState, MediaPlayerService } from "../MediaPlayerService";
+import { PlayerAction, PlaybackState, MediaPlayerService } from "../MediaPlayerService";
 import { Notice } from "obsidian";
 
 export class SpotifyLinkHandler implements MediaPlayerService {
@@ -92,24 +92,24 @@ export class SpotifyLinkHandler implements MediaPlayerService {
 		}
 	}
 
-	async getPlayerState(): Promise<PlayerState> {
+	async getPlayerState(): Promise<PlaybackState> {
 		// Do not request the user to authenticate if not authenticated here already.
 		// This function is called from a periodic notification hook, and it would
 		// be really annoying for the Spotify login screen to pop up every 5 seconds...
 		if (!await this.sdk?.getAccessToken()) {
-			return PlayerState.Disconnected;
+			return PlaybackState.Disconnected;
 		}
 
 		try {
 			const state = await this.sdk.player.getPlaybackState();
 			if (state == null) {
-				return PlayerState.Disconnected;
+				return PlaybackState.Disconnected;
 			}
 			if (state.is_playing) {
-				return PlayerState.Playing;
+				return PlaybackState.Playing;
 				// @ts-expect-error
 			} else if (true || !state.actions?.disallows?.resuming) {
-				return PlayerState.Paused;
+				return PlaybackState.Paused;
 			}
 		} catch (e: any) {
 			new Notice(e.toString());
@@ -126,6 +126,6 @@ export class SpotifyLinkHandler implements MediaPlayerService {
 
 		// We are connected to the Spotify API, but there is no active/available
 		// playback device connected to it, so we can't play any music.
-		return PlayerState.Disconnected;
+		return PlaybackState.Disconnected;
 	}
 }

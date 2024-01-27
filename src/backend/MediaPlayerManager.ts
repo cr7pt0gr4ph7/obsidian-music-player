@@ -1,5 +1,5 @@
 import MusicPlayerPlugin from "../main";
-import { PlayerAction, PlayerState, MediaPlayerService } from "./MediaPlayerService";
+import { PlayerAction, PlaybackState, MediaPlayerService } from "./MediaPlayerService";
 import { SpotifyLinkHandler } from "./handlers/SpotifyLinkHandler";
 
 export class MediaPlayerManager implements MediaPlayerService {
@@ -26,7 +26,7 @@ export class MediaPlayerManager implements MediaPlayerService {
 		}
 	}
 
-	async getPlayerState(): Promise<PlayerState> {
+	async getPlayerState(): Promise<PlaybackState> {
 		// We have to decide which player's state should actually be returned.
 		// Case 1: If the user has recently interacted with a player, we consider that one active.
 		if (this.activeHandler) {
@@ -38,7 +38,7 @@ export class MediaPlayerManager implements MediaPlayerService {
 		//         are currently active, but at least its better than nothing. 
 		for (const h of this.handlers) {
 			const state = await h.getPlayerState();
-			if (state === PlayerState.Playing) {
+			if (state === PlaybackState.Playing) {
 				// Remember this player as the active player
 				this.activeHandler = h;
 				return state;
@@ -48,7 +48,7 @@ export class MediaPlayerManager implements MediaPlayerService {
 		// Case 3: There is no obviously active player, so we just wait
 		//         until the user activates a player, or until one of the
 		//         monitored players changes its state to "playing".
-		return PlayerState.Disconnected;
+		return PlaybackState.Disconnected;
 	}
 
 	async determineActiveHandler(): Promise<MediaPlayerService | null> {
@@ -58,7 +58,7 @@ export class MediaPlayerManager implements MediaPlayerService {
 
 		for (const h of this.handlers) {
 			const state = await h.getPlayerState();
-			if (state === PlayerState.Playing) {
+			if (state === PlaybackState.Playing) {
 				// Remember this player as the active player
 				this.activeHandler = h;
 				return h

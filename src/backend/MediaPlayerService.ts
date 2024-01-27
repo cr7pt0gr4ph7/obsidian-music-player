@@ -1,4 +1,4 @@
-export enum PlayerState {
+export enum PlaybackState {
 	Disconnected = 'disconnected',
 	Playing = 'playing',
 	Paused = 'paused',
@@ -16,6 +16,6 @@ export interface MediaPlayerService {
 	isSupported(url: string): boolean;
 	openLink(url: string): Promise<void>;
 	performAction(action: PlayerAction): Promise<void>;
-	getPlayerState(): Promise<PlayerState>;
+	getPlayerState(): Promise<PlaybackState>;
 	getPlayerTrack(): Promise<{ title: string, artists: string[] } | null>;
 }
