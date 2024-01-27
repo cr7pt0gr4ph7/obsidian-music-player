@@ -16,6 +16,7 @@ export interface PlayerState {
 	state: PlaybackState,
 	source?: string,
 	track?: {
+		url?: string,
 		title?: string,
 		artists?: string[],
 		album?: string;

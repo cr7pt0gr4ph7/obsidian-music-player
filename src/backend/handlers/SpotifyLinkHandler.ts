@@ -80,6 +80,7 @@ export class SpotifyLinkHandler implements MediaPlayerService {
 				state: state,
 				source: this.name,
 				track: {
+					url: result?.item.external_urls.spotify,
 					title: result?.item.name,
 					artists: trackInfo?.artists,
 					album: trackInfo?.album,

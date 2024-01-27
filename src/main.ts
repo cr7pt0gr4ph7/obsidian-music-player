@@ -159,10 +159,45 @@ export default class MusicPlayerPlugin extends Plugin {
 
 		const menu = new Menu();
 
+		menu.addItem((item) =>
+			item.setTitle("Current track URL")
+				.setDisabled(true));
+
+		menu.addItem((item) =>
+			item
+				.setTitle("Insert at cursor")
+				.setIcon("link")
+				.onClick(async () => {
+					const playerState = await this.playerManager.getPlayerState({ include: { track: { url: true } } });
+					const url = playerState.track?.url;
+					if (url && url.length > 0) {
+						this.app.workspace.activeEditor?.editor?.replaceSelection(url);
+					}
+				}));
+
+		menu.addItem((item) =>
+			item
+				.setTitle("Copy to clipboard")
+				.setIcon("copy")
+				.onClick(async () => {
+					const playerState = await this.playerManager.getPlayerState({ include: { track: { url: true } } });
+					const url = playerState.track?.url;
+					if (url && url.length > 0) {
+						window.navigator.clipboard.writeText(url);
+						new Notice(`Track URL copied to clipboard`);
+					}
+				}));
+
+		menu.addSeparator();
+
+		menu.addItem((item) =>
+			item.setTitle("Select active media player")
+				.setDisabled(true));
+
 		for (const p of this.playerManager.getAvailablePlayers()) {
 			(() => {
 				const player = p;
-				menu.addItem((item) => {
+				menu.addItem((item) =>
 					item
 						.setTitle(player.name)
 						.setIcon('play-circle')
@@ -170,8 +205,7 @@ export default class MusicPlayerPlugin extends Plugin {
 						.onClick(() => {
 							this.playerManager.selectPlayer(player);
 							this.onUpdatePlayerState(); // Force an update of the UI
-						});
-				});
+						}));
 			})();
 		}
 
