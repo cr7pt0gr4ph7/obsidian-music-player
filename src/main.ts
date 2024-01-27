@@ -94,39 +94,43 @@ export default class MusicPlayerPlugin extends Plugin {
 
 		var items: Record<ItemKey, () => void> = {
 			play: () => {
-				const statusBarPlayIcon = this.addStatusBarItem();
-				statusBarPlayIcon.addEventListener('click', evt => this.onIconClicked(evt));
-				statusBarPlayIcon.addClass('mod-clickable');
-				statusBarPlayIcon.title = 'Play / Pause';
-				setIcon(statusBarPlayIcon, 'play');
-				this.statusBarPlayIcon = statusBarPlayIcon;
+				const item = this.addStatusBarItem();
+				item.addEventListener('click', evt => this.onIconClicked(evt));
+				item.addClass('mod-clickable');
+				item.setAttribute('aria-label', 'Play / Pause');
+				item.setAttribute('data-tooltip-position', 'top');
+				setIcon(item, 'play');
+				this.statusBarPlayIcon = item;
 			},
 			text: () => {
-				const statusBarTextEl = this.addStatusBarItem();
-				statusBarTextEl.addEventListener('click', evt => this.onIconClicked(evt));
-				statusBarTextEl.addClass('mod-clickable');
-				statusBarTextEl.title = 'Current track';
-				this.statusBarTextEl = statusBarTextEl;
+				const item = this.addStatusBarItem();
+				item.addEventListener('click', evt => this.onIconClicked(evt));
+				item.addClass('mod-clickable');
+				item.setAttribute('aria-label', 'Current track');
+				item.setAttribute('data-tooltip-position', 'top');
+				this.statusBarTextEl = item;
 			},
 			prev: () => {
-				const statusBarPrevIcon = this.addStatusBarItem();
-				statusBarPrevIcon.addEventListener('click', () => this.playerManager.performAction(PlayerAction.SkipToPrevious));
-				statusBarPrevIcon.addClass('mod-clickable');
-				statusBarPrevIcon.title = 'Previous track';
-				setIcon(statusBarPrevIcon, 'skip-back');
+				const item = this.addStatusBarItem();
+				item.addEventListener('click', () => this.playerManager.performAction(PlayerAction.SkipToPrevious));
+				item.addClass('mod-clickable');
+				item.setAttribute('aria-label', 'Previous track');
+				item.setAttribute('data-tooltip-position', 'top');
+				setIcon(item, 'skip-back');
 			},
 			next: () => {
-				const statusBarNextIcon = this.addStatusBarItem();
-				statusBarNextIcon.addEventListener('click', () => this.playerManager.performAction(PlayerAction.SkipToNext));
-				statusBarNextIcon.addClass('mod-clickable');
-				statusBarNextIcon.title = 'Next track';
-				setIcon(statusBarNextIcon, 'skip-forward');
+				const item = this.addStatusBarItem();
+				item.addEventListener('click', () => this.playerManager.performAction(PlayerAction.SkipToNext));
+				item.addClass('mod-clickable');
+				item.setAttribute('aria-label', 'Next track');
+				item.setAttribute('data-tooltip-position', 'top');
+				setIcon(item, 'skip-forward');
 			}
 		};
 
 		var itemOrder: ItemKey[] = ['text', 'prev', 'play', 'next'];
 
-		for(const key of itemOrder) {
+		for (const key of itemOrder) {
 			items[key]();
 		}
 	}
@@ -259,9 +263,8 @@ export default class MusicPlayerPlugin extends Plugin {
 
 		this.ribbonIconEl?.setAttribute('aria-label', label ?? DEFAULT_ICON_LABEL);
 		this.statusBarTextEl?.setText(label ?? '');
-		if (this.statusBarTextEl) {
-			this.statusBarTextEl.title = `Currently playing on ${source ?? '(Unknown)'}: ${label ?? ''}`;
-		}
+		this.statusBarPlayIcon?.setAttribute('aria-label', 'Play / Pause');
+		(this.statusBarTextEl || this.statusBarPlayIcon)?.setAttribute('aria-label', `Currently playing on ${source ?? '(Unknown)'}:\n${label ?? ''}`);
 	}
 
 	private setPlayerStateIcon(state: PlaybackState) {
