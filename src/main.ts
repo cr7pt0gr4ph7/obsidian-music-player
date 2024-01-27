@@ -1,12 +1,12 @@
 import { Plugin, setIcon } from 'obsidian';
 import { DEFAULT_SETTINGS, MusicPlayerPluginSettings, MusicPlayerSettingsTab } from './Settings';
 import { SpotifyAuthHandler } from './backend/handlers/SpotifyAuthHandler';
-import { PlayerAction, PlayerState, SourceHandler } from './backend/SourceHandler';
-import { SourceHandlerManager } from './backend/SourceHandlerManager';
+import { PlayerAction, PlayerState, MediaPlayerService } from './backend/MediaPlayerService';
+import { MediaPlayerManager } from './backend/MediaPlayerManager';
 
 export default class MusicPlayerPlugin extends Plugin {
 	isLoaded: boolean;
-	handlers: SourceHandler;
+	handlers: MediaPlayerService;
 	settings: MusicPlayerPluginSettings;
 	auth: SpotifyAuthHandler;
 	onUpdatePlayerState: () => void;
@@ -14,7 +14,7 @@ export default class MusicPlayerPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		this.handlers = new SourceHandlerManager(this);
+		this.handlers = new MediaPlayerManager(this);
 		this.auth = new SpotifyAuthHandler(this);
 
 		// Register a protocol handler to intercept the Spotify OAuth 2.0 authorization flow

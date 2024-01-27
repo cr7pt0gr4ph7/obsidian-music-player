@@ -12,7 +12,7 @@ export enum PlayerAction {
 	SkipToNext = 'next',
 }
 
-export interface SourceHandler {
+export interface MediaPlayerService {
 	isSupported(url: string): boolean;
 	openLink(url: string): Promise<void>;
 	performAction(action: PlayerAction): Promise<void>;

@@ -1,8 +1,8 @@
 import MusicPlayerPlugin from "../../main";
-import { PlayerAction, PlayerState, SourceHandler } from "../SourceHandler";
+import { PlayerAction, PlayerState, MediaPlayerService } from "../MediaPlayerService";
 import { Notice } from "obsidian";
 
-export class SpotifyLinkHandler implements SourceHandler {
+export class SpotifyLinkHandler implements MediaPlayerService {
 	plugin: MusicPlayerPlugin;
 
 	constructor(plugin: MusicPlayerPlugin) {

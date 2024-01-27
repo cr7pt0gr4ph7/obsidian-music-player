@@ -1,11 +1,11 @@
 import MusicPlayerPlugin from "../main";
-import { PlayerAction, PlayerState, SourceHandler } from "./SourceHandler";
+import { PlayerAction, PlayerState, MediaPlayerService } from "./MediaPlayerService";
 import { SpotifyLinkHandler } from "./handlers/SpotifyLinkHandler";
 
-export class SourceHandlerManager implements SourceHandler {
+export class MediaPlayerManager implements MediaPlayerService {
 	plugin: MusicPlayerPlugin;
-	handlers: SourceHandler[];
-	activeHandler: SourceHandler;
+	handlers: MediaPlayerService[];
+	activeHandler: MediaPlayerService;
 
 	constructor(plugin: MusicPlayerPlugin) {
 		this.handlers = [
@@ -51,7 +51,7 @@ export class SourceHandlerManager implements SourceHandler {
 		return PlayerState.Disconnected;
 	}
 
-	async determineActiveHandler(): Promise<SourceHandler | null> {
+	async determineActiveHandler(): Promise<MediaPlayerService | null> {
 		if (this.activeHandler) {
 			return this.activeHandler;
 		}
