@@ -33,9 +33,13 @@ type FieldSelector<Type> =
 	: Type extends string[] ? boolean
 	: { [Property in keyof Type]?: FieldSelector<Type[Property]> };
 
-export interface MediaPlayerService {
+export interface MediaPlayerService extends MediaPlayerInfo {
 	isLinkSupported(url: string): boolean;
 	openLink(url: string): Promise<void>;
 	performAction(action: PlayerAction): Promise<void>;
 	getPlayerState(options?: PlayerStateOptions): Promise<PlayerState>;
+}
+
+export interface MediaPlayerInfo {
+	readonly name: string;
 }
