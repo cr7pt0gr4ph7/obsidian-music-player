@@ -84,25 +84,29 @@ export default class MusicPlayerPlugin extends Plugin {
 	 */
 	private registerStatusBarItems() {
 		const statusBarPlayIcon = this.addStatusBarItem();
-		statusBarPlayIcon.addClass('mod-clickable');
-		setIcon(statusBarPlayIcon, 'play');
 		statusBarPlayIcon.addEventListener('click', evt => this.onIconClicked(evt));
+		statusBarPlayIcon.addClass('mod-clickable');
+		statusBarPlayIcon.title = 'Play / Pause';
+		setIcon(statusBarPlayIcon, 'play');
 		this.statusBarPlayIcon = statusBarPlayIcon;
 
 		const statusBarTextEl = this.addStatusBarItem();
-		statusBarTextEl.addClass('mod-clickable');
 		statusBarTextEl.addEventListener('click', evt => this.onIconClicked(evt));
+		statusBarTextEl.addClass('mod-clickable');
+		statusBarTextEl.title = 'Current track';
 		this.statusBarTextEl = statusBarTextEl;
 
 		const statusBarPrevIcon = this.addStatusBarItem();
-		statusBarPrevIcon.addClass('mod-clickable');
-		setIcon(statusBarPrevIcon, 'skip-back');
 		statusBarPrevIcon.addEventListener('click', () => this.playerManager.performAction(PlayerAction.SkipToPrevious));
+		statusBarPrevIcon.addClass('mod-clickable');
+		statusBarPrevIcon.title = 'Previous track';
+		setIcon(statusBarPrevIcon, 'skip-back');
 
 		const statusBarNextIcon = this.addStatusBarItem();
-		statusBarNextIcon.addClass('mod-clickable');
-		setIcon(statusBarNextIcon, 'skip-forward');
 		statusBarNextIcon.addEventListener('click', () => this.playerManager.performAction(PlayerAction.SkipToNext));
+		statusBarNextIcon.addClass('mod-clickable');
+		statusBarNextIcon.title = 'Next track';
+		setIcon(statusBarNextIcon, 'skip-forward');
 	}
 
 	/**
@@ -161,10 +165,11 @@ export default class MusicPlayerPlugin extends Plugin {
 				menu.addItem((item) => {
 					item
 						.setTitle(player.name)
-						.setIcon("play-circle")
+						.setIcon('play-circle')
 						.setChecked(this.playerManager.isActivePlayer(player))
 						.onClick(() => {
 							this.playerManager.selectPlayer(player);
+							this.onUpdatePlayerState(); // Force an update of the UI
 						});
 				});
 			})();
@@ -181,10 +186,10 @@ export default class MusicPlayerPlugin extends Plugin {
 		const playerState = await this.playerManager.getPlayerState({ include: { track: { title: true, album: true } } });
 		this.setPlayerStateIcon(playerState.state);
 		const track = playerState.track;
-		this.setPlayerLabel(track ? `${playerState.track?.artists?.join(', ')} – ${track.title}` : null);
+		this.setPlayerLabel(track ? `${playerState.track?.artists?.join(', ')} – ${track.title}` : null, playerState.source ?? null);
 	}
 
-	private setPlayerLabel(label: string | null) {
+	private setPlayerLabel(label: string | null, source: string | null) {
 		if (!label || label.length === 0) {
 			label = null;
 		}
@@ -195,8 +200,11 @@ export default class MusicPlayerPlugin extends Plugin {
 			this.statusBarTextEl?.hide();
 		}
 
-		this.ribbonIconEl?.setAttribute("aria-label", label ?? DEFAULT_ICON_LABEL);
-		this.statusBarTextEl?.setText(label ?? "");
+		this.ribbonIconEl?.setAttribute('aria-label', label ?? DEFAULT_ICON_LABEL);
+		this.statusBarTextEl?.setText(label ?? '');
+		if (this.statusBarTextEl) {
+			this.statusBarTextEl.title = `Currently playing on ${source ?? '(Unknown)'}: ${label ?? ''}`;
+		}
 	}
 
 	private setPlayerStateIcon(state: PlaybackState) {

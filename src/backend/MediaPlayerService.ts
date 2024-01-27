@@ -14,6 +14,7 @@ export enum PlayerAction {
 
 export interface PlayerState {
 	state: PlaybackState,
+	source?: string,
 	track?: {
 		title?: string,
 		artists?: string[],

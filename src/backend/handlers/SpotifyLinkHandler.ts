@@ -69,7 +69,7 @@ export class SpotifyLinkHandler implements MediaPlayerService {
 		// This function is called from a periodic notification hook, and it would
 		// be really annoying for the Spotify login screen to pop up every 5 seconds...
 		if (!await this.sdk?.getAccessToken()) {
-			return { state: PlaybackState.Disconnected };
+			return { state: PlaybackState.Disconnected, source: this.name };
 		}
 
 		try {
@@ -78,6 +78,7 @@ export class SpotifyLinkHandler implements MediaPlayerService {
 			const trackInfo = await this.getTrackInfo(result, options ?? null);
 			return {
 				state: state,
+				source: this.name,
 				track: {
 					title: result?.item.name,
 					artists: trackInfo?.artists,
@@ -100,7 +101,7 @@ export class SpotifyLinkHandler implements MediaPlayerService {
 
 		// We are connected to the Spotify API, but there is no active/available
 		// playback device connected to it, so we can't play any music.
-		return { state: PlaybackState.Disconnected };
+		return { state: PlaybackState.Disconnected, source: this.name };
 	}
 
 	private determinePlaybackState(state: SpotifyPlaybackState | null) {
