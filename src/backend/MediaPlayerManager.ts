@@ -30,7 +30,7 @@ export class MediaPlayerManager implements MediaPlayerService {
 		if (!this.availablePlayers.contains(player as MediaPlayerService)) {
 			throw Error("The specified player does not belong to this MediaPlayerManager");
 		}
-		return this.activePlayer === player; 
+		return this.activePlayer === player;
 	}
 
 	get name(): string {
@@ -94,5 +94,9 @@ export class MediaPlayerManager implements MediaPlayerService {
 
 	async performAction(action: PlayerAction): Promise<void> {
 		return await (await this.determineSelectedPlayer())?.performAction(action);
+	}
+
+	async performAuthorization(options: { silent: boolean }): Promise<void> {
+		await this.activePlayer?.performAuthorization(options);
 	}
 }

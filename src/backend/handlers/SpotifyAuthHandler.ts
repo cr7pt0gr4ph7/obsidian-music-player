@@ -4,6 +4,7 @@ import { Notice } from "obsidian";
 import { AuthService } from "../AuthService";
 
 interface SpotifyRedirectParameters {
+    target: string;
     code: string;
 }
 
@@ -80,6 +81,10 @@ export class SpotifyAuthHandler implements AuthService {
     }
 
     async receiveRedirect(parameters: SpotifyRedirectParameters) {
+        if (parameters.target != "spotify") {
+            return;
+        }
+
         console.debug(`Received auth flow parameters`);
         await this.verifyAndExchangeCode(parameters.code);
         new Notice("Spotify: Successfully authenticated");

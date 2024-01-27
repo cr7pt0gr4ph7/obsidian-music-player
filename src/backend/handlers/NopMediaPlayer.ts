@@ -18,4 +18,7 @@ export class NopMediaPlayer implements MediaPlayerService {
 	async getPlayerState(options?: PlayerStateOptions | undefined): Promise<PlayerState> {
 		return { state: PlaybackState.Disconnected, source: this.name };
 	}
+
+	async performAuthorization(options: { silent: boolean }): Promise<void> {
+	}
 }

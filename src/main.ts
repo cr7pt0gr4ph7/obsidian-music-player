@@ -138,7 +138,7 @@ export default class MusicPlayerPlugin extends Plugin {
 					this.setPlayerStateIcon(PlaybackState.Playing);
 					break;
 				case PlaybackState.Disconnected:
-					await this.auth.get(SpotifyAuthHandler).performAuthorization({ silent: false });
+					await this.playerManager.performAuthorization({ silent: false });
 					this.setPlayerStateIcon(playerState.state);
 					break;
 				default:
@@ -203,6 +203,7 @@ export default class MusicPlayerPlugin extends Plugin {
 						.setChecked(this.playerManager.isActivePlayer(player))
 						.onClick(() => {
 							this.playerManager.selectPlayer(player);
+							this.playerManager.performAuthorization({ silent: false });
 							this.onUpdatePlayerState(); // Force an update of the UI
 						}));
 			})();

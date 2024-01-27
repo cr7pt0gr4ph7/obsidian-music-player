@@ -1,4 +1,4 @@
-import { PlaybackState as SpotifyPlaybackState } from "@spotify/web-api-ts-sdk";
+import { SpotifyApi, PlaybackState as SpotifyPlaybackState } from "@spotify/web-api-ts-sdk";
 import MusicPlayerPlugin from "../../main";
 import { PlayerAction, PlaybackState, MediaPlayerService, PlayerStateOptions, PlayerState } from "../MediaPlayerService";
 import { Notice } from "obsidian";
@@ -19,12 +19,16 @@ export class SpotifyLinkHandler implements MediaPlayerService {
 		return url.startsWith("https://open.spotify.com");
 	}
 
+	async performAuthorization(options: { silent: boolean }): Promise<void> {
+		await this.auth.performAuthorization(options);
+	}
+
 	async openLink(url: string): Promise<void> {
 		new Notice(`Recognized spotify link: ${url}`);
 
 		await this.auth.withAuthentication({
 			silent: false,
-			onAuthenticated: async sdk => await this.sdk.player.startResumePlayback("", undefined, [url]),
+			onAuthenticated: async sdk => await sdk.player.startResumePlayback("", undefined, [url]),
 			onFailure: async () => { }
 		});
 	}
@@ -32,10 +36,6 @@ export class SpotifyLinkHandler implements MediaPlayerService {
 
 	get auth() {
 		return this.plugin.auth.get(SpotifyAuthHandler);
-	}
-
-	get sdk() {
-		return this.auth.sdk;
 	}
 
 	async performAction(action: PlayerAction) {
@@ -69,9 +69,9 @@ export class SpotifyLinkHandler implements MediaPlayerService {
 		return await this.auth.withAuthentication({
 			silent: true,
 			onAuthenticated: async sdk => {
-				const result = await this.sdk.player.getPlaybackState();
+				const result = await sdk.player.getPlaybackState();
 				const state = this.determinePlaybackState(result);
-				const trackInfo = await this.getTrackInfo(result, options ?? null);
+				const trackInfo = await this.getTrackInfo(sdk, result, options ?? null);
 				return {
 					state: state,
 					source: this.name,
@@ -101,11 +101,11 @@ export class SpotifyLinkHandler implements MediaPlayerService {
 		}
 	}
 
-	async getTrackInfo(result: SpotifyPlaybackState, options: PlayerStateOptions | null): Promise<{ title?: string, artists?: string[], album?: string } | null> {
+	async getTrackInfo(sdk: SpotifyApi, result: SpotifyPlaybackState, options: PlayerStateOptions | null): Promise<{ title?: string, artists?: string[], album?: string } | null> {
 		if (!result || !(options?.include.track?.artists || options?.include.track?.album)) {
 			return null;
 		}
-		const track = await this.sdk.tracks.get(result?.item?.id);
+		const track = await sdk.tracks.get(result?.item?.id);
 		return {
 			title: track.name,
 			artists: track.artists.map(a => a.name),

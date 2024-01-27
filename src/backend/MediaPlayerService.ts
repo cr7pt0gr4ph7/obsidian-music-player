@@ -40,6 +40,7 @@ export interface MediaPlayerService extends MediaPlayerInfo {
 	openLink(url: string): Promise<void>;
 	performAction(action: PlayerAction): Promise<void>;
 	getPlayerState(options?: PlayerStateOptions): Promise<PlayerState>;
+	performAuthorization(options: { silent: boolean }): Promise<void>;
 }
 
 export interface MediaPlayerInfo {
