@@ -90,30 +90,45 @@ export default class MusicPlayerPlugin extends Plugin {
 	 * Setup: Add status bar items (Note: not available on mobile). 
 	 */
 	private registerStatusBarItems() {
-		const statusBarPlayIcon = this.addStatusBarItem();
-		statusBarPlayIcon.addEventListener('click', evt => this.onIconClicked(evt));
-		statusBarPlayIcon.addClass('mod-clickable');
-		statusBarPlayIcon.title = 'Play / Pause';
-		setIcon(statusBarPlayIcon, 'play');
-		this.statusBarPlayIcon = statusBarPlayIcon;
+		type ItemKey = 'play' | 'text' | 'prev' | 'next';
 
-		const statusBarTextEl = this.addStatusBarItem();
-		statusBarTextEl.addEventListener('click', evt => this.onIconClicked(evt));
-		statusBarTextEl.addClass('mod-clickable');
-		statusBarTextEl.title = 'Current track';
-		this.statusBarTextEl = statusBarTextEl;
+		var items: Record<ItemKey, () => void> = {
+			play: () => {
+				const statusBarPlayIcon = this.addStatusBarItem();
+				statusBarPlayIcon.addEventListener('click', evt => this.onIconClicked(evt));
+				statusBarPlayIcon.addClass('mod-clickable');
+				statusBarPlayIcon.title = 'Play / Pause';
+				setIcon(statusBarPlayIcon, 'play');
+				this.statusBarPlayIcon = statusBarPlayIcon;
+			},
+			text: () => {
+				const statusBarTextEl = this.addStatusBarItem();
+				statusBarTextEl.addEventListener('click', evt => this.onIconClicked(evt));
+				statusBarTextEl.addClass('mod-clickable');
+				statusBarTextEl.title = 'Current track';
+				this.statusBarTextEl = statusBarTextEl;
+			},
+			prev: () => {
+				const statusBarPrevIcon = this.addStatusBarItem();
+				statusBarPrevIcon.addEventListener('click', () => this.playerManager.performAction(PlayerAction.SkipToPrevious));
+				statusBarPrevIcon.addClass('mod-clickable');
+				statusBarPrevIcon.title = 'Previous track';
+				setIcon(statusBarPrevIcon, 'skip-back');
+			},
+			next: () => {
+				const statusBarNextIcon = this.addStatusBarItem();
+				statusBarNextIcon.addEventListener('click', () => this.playerManager.performAction(PlayerAction.SkipToNext));
+				statusBarNextIcon.addClass('mod-clickable');
+				statusBarNextIcon.title = 'Next track';
+				setIcon(statusBarNextIcon, 'skip-forward');
+			}
+		};
 
-		const statusBarPrevIcon = this.addStatusBarItem();
-		statusBarPrevIcon.addEventListener('click', () => this.playerManager.performAction(PlayerAction.SkipToPrevious));
-		statusBarPrevIcon.addClass('mod-clickable');
-		statusBarPrevIcon.title = 'Previous track';
-		setIcon(statusBarPrevIcon, 'skip-back');
+		var itemOrder: ItemKey[] = ['text', 'prev', 'play', 'next'];
 
-		const statusBarNextIcon = this.addStatusBarItem();
-		statusBarNextIcon.addEventListener('click', () => this.playerManager.performAction(PlayerAction.SkipToNext));
-		statusBarNextIcon.addClass('mod-clickable');
-		statusBarNextIcon.title = 'Next track';
-		setIcon(statusBarNextIcon, 'skip-forward');
+		for(const key of itemOrder) {
+			items[key]();
+		}
 	}
 
 	/**
