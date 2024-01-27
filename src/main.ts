@@ -45,6 +45,14 @@ export default class MusicPlayerPlugin extends Plugin {
 			}
 		});
 		this.interceptor.installHooks();
+
+		// Attempt automatic login if enabled
+		for (const p of this.playerManager.getAvailablePlayers()) {
+			await p.performAuthorization({ silent: true });
+		}
+
+		// Initial update of the player state
+		await this.onUpdatePlayerState();
 	}
 
 	onunload() {

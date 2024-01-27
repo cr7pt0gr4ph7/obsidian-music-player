@@ -3,6 +3,7 @@ import { PluginSettingTab, App, Setting } from "obsidian";
 
 export interface MusicPlayerPluginSettings {
 	spotifyEnabled: boolean;
+	autoLoginEnabled: boolean;
 	showPlayStateInIcon: boolean;
 	changeIconColor: boolean;
 	showTrackInStatusBar: boolean;
@@ -10,6 +11,7 @@ export interface MusicPlayerPluginSettings {
 
 export const DEFAULT_SETTINGS: MusicPlayerPluginSettings = {
 	spotifyEnabled: false,
+	autoLoginEnabled: true,
 	showPlayStateInIcon: true,
 	changeIconColor: true,
 	showTrackInStatusBar: true,
@@ -37,6 +39,18 @@ export class MusicPlayerSettingsTab extends PluginSettingTab {
 					this.plugin.saveSettings();
 				});
 			});
+
+
+		new Setting(containerEl)
+			.setName('Auto-login on startup')
+			.setDesc('Enable automatic login on app startup.')
+			.addToggle(cb => {
+				cb.setValue(this.plugin.settings.autoLoginEnabled).onChange(data => {
+					this.plugin.settings.autoLoginEnabled = data;
+					this.plugin.saveSettings();
+				});
+			});
+
 
 		new Setting(containerEl)
 			.setName('Show playback state via icon')

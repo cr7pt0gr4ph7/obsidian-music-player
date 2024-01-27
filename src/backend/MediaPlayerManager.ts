@@ -15,7 +15,7 @@ export class MediaPlayerManager implements MediaPlayerService {
 		]
 	}
 
-	getAvailablePlayers(): MediaPlayerInfo[] {
+	getAvailablePlayers(): MediaPlayerService[] {
 		return this.availablePlayers;
 	}
 
