@@ -1,5 +1,6 @@
+import { PlaybackState as SpotifyPlaybackState } from "@spotify/web-api-ts-sdk";
 import MusicPlayerPlugin from "../../main";
-import { PlayerAction, PlaybackState, MediaPlayerService } from "../MediaPlayerService";
+import { PlayerAction, PlaybackState, MediaPlayerService, PlayerStateOptions, PlayerState } from "../MediaPlayerService";
 import { Notice } from "obsidian";
 
 export class SpotifyLinkHandler implements MediaPlayerService {
@@ -9,7 +10,7 @@ export class SpotifyLinkHandler implements MediaPlayerService {
 		this.plugin = plugin;
 	}
 
-	isSupported(url: string): boolean {
+	isLinkSupported(url: string): boolean {
 		return url.startsWith("https://open.spotify.com");
 	}
 
@@ -59,58 +60,27 @@ export class SpotifyLinkHandler implements MediaPlayerService {
 		}
 	}
 
-	async getPlayerTrack(): Promise<{ title: string, artists: string[] } | null> {
+	async getPlayerState(options?: PlayerStateOptions): Promise<PlayerState> {
 		// Do not request the user to authenticate if not authenticated here already.
 		// This function is called from a periodic notification hook, and it would
 		// be really annoying for the Spotify login screen to pop up every 5 seconds...
 		if (!await this.sdk?.getAccessToken()) {
-			return null;
+			return { state: PlaybackState.Disconnected };
 		}
 
 		try {
-			const state = await this.sdk.player.getCurrentlyPlayingTrack();
-			if (!state) {
-				return null;
-			}
-			const track = await this.sdk.tracks.get(state?.item?.id);
+			const result = await this.sdk.player.getPlaybackState();
+			const state = this.determinePlaybackState(result);
+			const trackInfo = await this.getTrackInfo(result, options ?? null);
 			return {
-				title: track.name,
-				artists: track.artists.map(a => a.name)
-			};
-		} catch (e: any) {
-			new Notice(e.toString());
-			if (e instanceof Error) {
-				// This is a total hack. It exists to invalidate a token that has expired,
-				// to avoid retrying an infinite number of times with an expired token.
-				// We should replace this logic with a custom SdkConfig.responseValidator.
-				if (e.message.contains("Bad or expired token.")) {
-					new Notice("Invalidating token");
-					this.sdk.logOut();
+				state: state,
+				track: {
+					title: result?.item.name,
+					artists: trackInfo?.artists,
+					album: trackInfo?.album,
 				}
 			}
-			return null;
-		}
-	}
 
-	async getPlayerState(): Promise<PlaybackState> {
-		// Do not request the user to authenticate if not authenticated here already.
-		// This function is called from a periodic notification hook, and it would
-		// be really annoying for the Spotify login screen to pop up every 5 seconds...
-		if (!await this.sdk?.getAccessToken()) {
-			return PlaybackState.Disconnected;
-		}
-
-		try {
-			const state = await this.sdk.player.getPlaybackState();
-			if (state == null) {
-				return PlaybackState.Disconnected;
-			}
-			if (state.is_playing) {
-				return PlaybackState.Playing;
-				// @ts-expect-error
-			} else if (true || !state.actions?.disallows?.resuming) {
-				return PlaybackState.Paused;
-			}
 		} catch (e: any) {
 			new Notice(e.toString());
 			if (e instanceof Error) {
@@ -126,6 +96,30 @@ export class SpotifyLinkHandler implements MediaPlayerService {
 
 		// We are connected to the Spotify API, but there is no active/available
 		// playback device connected to it, so we can't play any music.
-		return PlaybackState.Disconnected;
+		return { state: PlaybackState.Disconnected };
+	}
+
+	private determinePlaybackState(state: SpotifyPlaybackState | null) {
+		if (state == null) {
+			return PlaybackState.Disconnected;
+		}
+		if (state.is_playing) {
+			return PlaybackState.Playing;
+			// @ts-expect-error
+		} else if (true || !state.actions?.disallows?.resuming) {
+			return PlaybackState.Paused;
+		}
+	}
+
+	async getTrackInfo(result: SpotifyPlaybackState, options: PlayerStateOptions | null): Promise<{ title?: string, artists?: string[], album?: string } | null> {
+		if (!result || !(options?.include.track?.artists || options?.include.track?.album)) {
+			return null;
+		}
+		const track = await this.sdk.tracks.get(result?.item?.id);
+		return {
+			title: track.name,
+			artists: track.artists.map(a => a.name),
+			album: track.album.name,
+		};
 	}
 }

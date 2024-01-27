@@ -12,10 +12,30 @@ export enum PlayerAction {
 	SkipToNext = 'next',
 }
 
+export interface PlayerState {
+	state: PlaybackState,
+	track?: {
+		title?: string,
+		artists?: string[],
+		album?: string;
+	}
+}
+
+export interface PlayerStateOptions {
+	/**
+	 * Specifies which fields should be retrieved.
+	 */
+	include: Omit<FieldSelector<PlayerState>, 'state'>
+}
+
+type FieldSelector<Type> =
+	Type extends string ? boolean
+	: Type extends string[] ? boolean
+	: { [Property in keyof Type]?: FieldSelector<Type[Property]> };
+
 export interface MediaPlayerService {
-	isSupported(url: string): boolean;
+	isLinkSupported(url: string): boolean;
 	openLink(url: string): Promise<void>;
 	performAction(action: PlayerAction): Promise<void>;
-	getPlayerState(): Promise<PlaybackState>;
-	getPlayerTrack(): Promise<{ title: string, artists: string[] } | null>;
+	getPlayerState(options?: PlayerStateOptions): Promise<PlayerState>;
 }

@@ -29,8 +29,8 @@ export default class MusicPlayerPlugin extends Plugin {
 			} else if (evt.shiftKey) {
 				await this.handlers.performAction(PlayerAction.SkipToNext);
 			} else {
-				let state = await this.handlers.getPlayerState();
-				switch (state) {
+				const playerState = await this.handlers.getPlayerState();
+				switch (playerState.state) {
 					case PlaybackState.Playing:
 						await this.handlers.performAction(PlayerAction.Pause);
 						// Immediately update the icon so the user quickly gets visual feedback.
@@ -45,10 +45,10 @@ export default class MusicPlayerPlugin extends Plugin {
 						break;
 					case PlaybackState.Disconnected:
 						await this.auth.performAuthorization();
-						setPlayerStateIcon(state);
+						setPlayerStateIcon(playerState.state);
 						break;
 					default:
-						setPlayerStateIcon(state);
+						setPlayerStateIcon(playerState.state);
 						break;
 				}
 			}
@@ -146,9 +146,10 @@ export default class MusicPlayerPlugin extends Plugin {
 
 		// Periodically update the player state
 		this.onUpdatePlayerState = async () => {
-			setPlayerStateIcon(await this.handlers.getPlayerState());
-			const track = await this.handlers.getPlayerTrack();
-			setPlayerLabel(track ? `${track?.artists.join(', ')} – ${track.title}` : null);
+			const playerState = await this.handlers.getPlayerState({ include: { track: { title: true, album: true } } });
+			setPlayerStateIcon(playerState.state);
+			const track = playerState.track;
+			setPlayerLabel(track ? `${playerState.track?.artists?.join(', ')} – ${track.title}` : null);
 		};
 
 		this.registerInterval(window.setInterval(() => {
@@ -215,7 +216,7 @@ export default class MusicPlayerPlugin extends Plugin {
 	}
 
 	private onWindowOpenCalled(url?: string | URL, target?: string, features?: string): WindowProxy | null {
-		if (this.isLoaded && url && this.handlers.isSupported(url.toString())) {
+		if (this.isLoaded && url && this.handlers.isLinkSupported(url.toString())) {
 			// TODO: openLink returns a promise, which we then ignore...
 			this.handlers.openLink(url.toString());
 			return null;
