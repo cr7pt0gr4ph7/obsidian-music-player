@@ -2,6 +2,7 @@ import { PlaybackState as SpotifyPlaybackState } from "@spotify/web-api-ts-sdk";
 import MusicPlayerPlugin from "../../main";
 import { PlayerAction, PlaybackState, MediaPlayerService, PlayerStateOptions, PlayerState } from "../MediaPlayerService";
 import { Notice } from "obsidian";
+import { SpotifyAuthHandler } from "./SpotifyAuthHandler";
 
 export class SpotifyLinkHandler implements MediaPlayerService {
 	plugin: MusicPlayerPlugin;
@@ -20,89 +21,72 @@ export class SpotifyLinkHandler implements MediaPlayerService {
 
 	async openLink(url: string): Promise<void> {
 		new Notice(`Recognized spotify link: ${url}`);
-		await this.plugin.auth.performAuthorization();
 
-		try {
-			await this.sdk.player.startResumePlayback("", undefined, [url]);
-		} catch (e: any) {
-			new Notice(e.toString());
-			if (e instanceof Error && e.message.contains("Bad or expired token.")) {
-				console.log("Token has expired");
-				this.sdk.logOut();
-				await this.plugin.auth.performAuthorization();
-			}
-		}
+		await this.auth.withAuthentication({
+			silent: false,
+			onAuthenticated: async sdk => await this.sdk.player.startResumePlayback("", undefined, [url]),
+			onFailure: async () => { }
+		});
+	}
+
+
+	get auth() {
+		return this.plugin.auth.get(SpotifyAuthHandler);
 	}
 
 	get sdk() {
-		return this.plugin.auth.sdk;
+		return this.auth.sdk;
 	}
 
 	async performAction(action: PlayerAction) {
-		await this.plugin.auth.performAuthorization();
-		try {
-			switch (action) {
-				case PlayerAction.SkipToPrevious:
-					new Notice("Previous track");
-					await this.sdk.player.skipToPrevious("");
-					break;
-				case PlayerAction.SkipToNext:
-					new Notice("Next track");
-					await this.sdk.player.skipToNext("");
-					break;
-				case PlayerAction.Pause:
-					new Notice("Pausing playback");
-					await this.sdk.player.pausePlayback("");
-					break;
-				case PlayerAction.Resume:
-					new Notice("Resuming playback");
-					await this.sdk.player.startResumePlayback("");
-					break;
-			}
-		} catch (e: any) {
-			new Notice(e.toString());
-		}
+		await this.auth.withAuthentication({
+			silent: false,
+			onAuthenticated: async sdk => {
+				switch (action) {
+					case PlayerAction.SkipToPrevious:
+						new Notice("Previous track");
+						await sdk.player.skipToPrevious("");
+						break;
+					case PlayerAction.SkipToNext:
+						new Notice("Next track");
+						await sdk.player.skipToNext("");
+						break;
+					case PlayerAction.Pause:
+						new Notice("Pausing playback");
+						await sdk.player.pausePlayback("");
+						break;
+					case PlayerAction.Resume:
+						new Notice("Resuming playback");
+						await sdk.player.startResumePlayback("");
+						break;
+				}
+			},
+			onFailure: async () => { }
+		});
 	}
 
 	async getPlayerState(options?: PlayerStateOptions): Promise<PlayerState> {
-		// Do not request the user to authenticate if not authenticated here already.
-		// This function is called from a periodic notification hook, and it would
-		// be really annoying for the Spotify login screen to pop up every 5 seconds...
-		if (!await this.sdk?.getAccessToken()) {
-			return { state: PlaybackState.Disconnected, source: this.name };
-		}
-
-		try {
-			const result = await this.sdk.player.getPlaybackState();
-			const state = this.determinePlaybackState(result);
-			const trackInfo = await this.getTrackInfo(result, options ?? null);
-			return {
-				state: state,
-				source: this.name,
-				track: {
-					url: result?.item.external_urls.spotify,
-					title: result?.item.name,
-					artists: trackInfo?.artists,
-					album: trackInfo?.album,
-				}
+		return await this.auth.withAuthentication({
+			silent: true,
+			onAuthenticated: async sdk => {
+				const result = await this.sdk.player.getPlaybackState();
+				const state = this.determinePlaybackState(result);
+				const trackInfo = await this.getTrackInfo(result, options ?? null);
+				return {
+					state: state,
+					source: this.name,
+					track: {
+						url: result?.item.external_urls.spotify,
+						title: result?.item.name,
+						artists: trackInfo?.artists,
+						album: trackInfo?.album,
+					}
+				} as PlayerState;
+			},
+			onFailure: async () => {
+				return { state: PlaybackState.Disconnected, source: this.name } as PlayerState;
 			}
-
-		} catch (e: any) {
-			new Notice(e.toString());
-			if (e instanceof Error) {
-				// This is a total hack. It exists to invalidate a token that has expired,
-				// to avoid retrying an infinite number of times with an expired token.
-				// We should replace this logic with a custom SdkConfig.responseValidator.
-				if (e.message.contains("Bad or expired token.")) {
-					new Notice("Invalidating token");
-					this.sdk.logOut();
-				}
-			}
-		}
-
-		// We are connected to the Spotify API, but there is no active/available
-		// playback device connected to it, so we can't play any music.
-		return { state: PlaybackState.Disconnected, source: this.name };
+		});
 	}
 
 	private determinePlaybackState(state: SpotifyPlaybackState | null) {

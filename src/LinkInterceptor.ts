@@ -1,4 +1,4 @@
-class LinkInterceptor {
+export class LinkInterceptor {
 	private isLoaded: boolean = false;
 	private onOpeningLink: (url: string) => boolean;
 

@@ -1,15 +1,17 @@
 import { Menu, Notice, Plugin, setIcon } from 'obsidian';
 import { DEFAULT_SETTINGS, MusicPlayerPluginSettings, MusicPlayerSettingsTab } from './Settings';
 import { SpotifyAuthHandler } from './backend/handlers/SpotifyAuthHandler';
-import { PlayerAction, PlaybackState, MediaPlayerService } from './backend/MediaPlayerService';
+import { PlayerAction, PlaybackState } from './backend/MediaPlayerService';
 import { MediaPlayerManager } from './backend/MediaPlayerManager';
+import { AuthManager } from './backend/AuthManager';
+import { LinkInterceptor } from './LinkInterceptor';
 
 const DEFAULT_ICON_LABEL = 'Pause / Resume music\n(Ctrl: Prev. Track / Shift: Next Track)';
 
 export default class MusicPlayerPlugin extends Plugin {
 	playerManager: MediaPlayerManager;
 	settings: MusicPlayerPluginSettings;
-	auth: SpotifyAuthHandler;
+	auth: AuthManager;
 	interceptor?: LinkInterceptor;
 	ribbonIconEl?: HTMLElement;
 	statusBarTextEl?: HTMLElement;
@@ -19,7 +21,8 @@ export default class MusicPlayerPlugin extends Plugin {
 		await this.loadSettings();
 
 		this.playerManager = new MediaPlayerManager(this);
-		this.auth = new SpotifyAuthHandler(this);
+		this.auth = new AuthManager(this);
+		this.auth.register(SpotifyAuthHandler);
 
 		this.registerProtocolHandlers();
 		this.registerStatusBarItems();
@@ -61,7 +64,7 @@ export default class MusicPlayerPlugin extends Plugin {
 	 */
 	private registerProtocolHandlers() {
 		this.registerObsidianProtocolHandler('music-player-auth-flow', parameters => {
-			this.auth.receiveObsidianProtocolAction(parameters);
+			this.auth.receiveAuthFlow(parameters);
 		});
 	}
 
@@ -135,7 +138,7 @@ export default class MusicPlayerPlugin extends Plugin {
 					this.setPlayerStateIcon(PlaybackState.Playing);
 					break;
 				case PlaybackState.Disconnected:
-					await this.auth.performAuthorization();
+					await this.auth.get(SpotifyAuthHandler).performAuthorization({ silent: false });
 					this.setPlayerStateIcon(playerState.state);
 					break;
 				default:
