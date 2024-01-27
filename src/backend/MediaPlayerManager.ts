@@ -1,5 +1,6 @@
 import MusicPlayerPlugin from "../main";
 import { PlayerAction, PlaybackState, MediaPlayerInfo, MediaPlayerService, PlayerStateOptions, PlayerState } from "./MediaPlayerService";
+import { NopMediaPlayer } from "./handlers/NopMediaPlayer";
 import { SpotifyLinkHandler } from "./handlers/SpotifyLinkHandler";
 
 export class MediaPlayerManager implements MediaPlayerService {
@@ -9,6 +10,7 @@ export class MediaPlayerManager implements MediaPlayerService {
 
 	constructor(plugin: MusicPlayerPlugin) {
 		this.availablePlayers = [
+			new NopMediaPlayer(),
 			new SpotifyLinkHandler(plugin)
 		]
 	}
@@ -22,6 +24,13 @@ export class MediaPlayerManager implements MediaPlayerService {
 			throw Error("The specified player does not belong to this MediaPlayerManager");
 		}
 		this.activePlayer = player as MediaPlayerService;
+	}
+
+	isActivePlayer(player: MediaPlayerInfo): boolean {
+		if (!this.availablePlayers.contains(player as MediaPlayerService)) {
+			throw Error("The specified player does not belong to this MediaPlayerManager");
+		}
+		return this.activePlayer === player; 
 	}
 
 	get name(): string {

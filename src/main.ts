@@ -1,4 +1,4 @@
-import { Plugin, setIcon } from 'obsidian';
+import { Menu, Notice, Plugin, setIcon } from 'obsidian';
 import { DEFAULT_SETTINGS, MusicPlayerPluginSettings, MusicPlayerSettingsTab } from './Settings';
 import { SpotifyAuthHandler } from './backend/handlers/SpotifyAuthHandler';
 import { PlayerAction, PlaybackState, MediaPlayerService } from './backend/MediaPlayerService';
@@ -7,7 +7,7 @@ import { MediaPlayerManager } from './backend/MediaPlayerManager';
 const DEFAULT_ICON_LABEL = 'Pause / Resume music\n(Ctrl: Prev. Track / Shift: Next Track)';
 
 export default class MusicPlayerPlugin extends Plugin {
-	handlers: MediaPlayerService;
+	playerManager: MediaPlayerManager;
 	settings: MusicPlayerPluginSettings;
 	auth: SpotifyAuthHandler;
 	interceptor?: LinkInterceptor;
@@ -18,7 +18,7 @@ export default class MusicPlayerPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		this.handlers = new MediaPlayerManager(this);
+		this.playerManager = new MediaPlayerManager(this);
 		this.auth = new SpotifyAuthHandler(this);
 
 		this.registerProtocolHandlers();
@@ -37,9 +37,9 @@ export default class MusicPlayerPlugin extends Plugin {
 		// Intercept navigation to external links by hooking existing events
 		this.interceptor = new LinkInterceptor({
 			onOpeningLink: (url) => {
-				if (this.handlers.isLinkSupported(url)) {
+				if (this.playerManager.isLinkSupported(url)) {
 					// TODO: openLink returns a promise, which we then ignore...
-					this.handlers.openLink(url);
+					this.playerManager.openLink(url);
 					return true;
 				}
 				return false;
@@ -75,6 +75,7 @@ export default class MusicPlayerPlugin extends Plugin {
 	private registerRibbonIcon() {
 		const ribbonIconEl = this.addRibbonIcon('play-circle', DEFAULT_ICON_LABEL, evt => this.onIconClicked(evt));
 		ribbonIconEl.addClass('embedded-music-player-ribbon');
+		ribbonIconEl.addEventListener('contextmenu', evt => this.onIconContextMenu(evt));
 		this.ribbonIconEl = ribbonIconEl;
 	}
 
@@ -96,12 +97,12 @@ export default class MusicPlayerPlugin extends Plugin {
 		const statusBarPrevIcon = this.addStatusBarItem();
 		statusBarPrevIcon.addClass('mod-clickable');
 		setIcon(statusBarPrevIcon, 'skip-back');
-		statusBarPrevIcon.addEventListener('click', () => this.handlers.performAction(PlayerAction.SkipToPrevious));
+		statusBarPrevIcon.addEventListener('click', () => this.playerManager.performAction(PlayerAction.SkipToPrevious));
 
 		const statusBarNextIcon = this.addStatusBarItem();
 		statusBarNextIcon.addClass('mod-clickable');
 		setIcon(statusBarNextIcon, 'skip-forward');
-		statusBarNextIcon.addEventListener('click', () => this.handlers.performAction(PlayerAction.SkipToNext));
+		statusBarNextIcon.addEventListener('click', () => this.playerManager.performAction(PlayerAction.SkipToNext));
 	}
 
 	/**
@@ -110,22 +111,26 @@ export default class MusicPlayerPlugin extends Plugin {
 	 * @param evt The mouse event.
 	 */
 	private async onIconClicked(evt: MouseEvent) {
-		if (evt.ctrlKey) {
-			await this.handlers.performAction(PlayerAction.SkipToPrevious);
+		const SECONDARY_MOUSE_BUTTON = 2;
+		if (evt.button == SECONDARY_MOUSE_BUTTON) {
+			// Already handled by onIconContextMenu
+			return;
+		} else if (evt.ctrlKey) {
+			await this.playerManager.performAction(PlayerAction.SkipToPrevious);
 		} else if (evt.shiftKey) {
-			await this.handlers.performAction(PlayerAction.SkipToNext);
+			await this.playerManager.performAction(PlayerAction.SkipToNext);
 		} else {
-			const playerState = await this.handlers.getPlayerState();
+			const playerState = await this.playerManager.getPlayerState();
 			switch (playerState.state) {
 				case PlaybackState.Playing:
-					await this.handlers.performAction(PlayerAction.Pause);
+					await this.playerManager.performAction(PlayerAction.Pause);
 					// Immediately update the icon so the user quickly gets visual feedback.
 					// If the state change fails for whatever reason, the icon will be "wrong"
 					// for a short period, until the next periodic update takes place.
 					this.setPlayerStateIcon(PlaybackState.Paused);
 					break;
 				case PlaybackState.Paused:
-					await this.handlers.performAction(PlayerAction.Resume);
+					await this.playerManager.performAction(PlayerAction.Resume);
 					// See note above on quick visual feedback & failure handling.
 					this.setPlayerStateIcon(PlaybackState.Playing);
 					break;
@@ -141,10 +146,39 @@ export default class MusicPlayerPlugin extends Plugin {
 	};
 
 	/**
+	 * Context menu handler for the ribbon icon.
+	 */
+	private onIconContextMenu(evt: MouseEvent): void {
+		if (!this.playerManager) {
+			return;
+		}
+
+		const menu = new Menu();
+
+		for (const p of this.playerManager.getAvailablePlayers()) {
+			(() => {
+				const player = p;
+				menu.addItem((item) => {
+					item
+						.setTitle(player.name)
+						.setIcon("play-circle")
+						.setChecked(this.playerManager.isActivePlayer(player))
+						.onClick(() => {
+							this.playerManager.selectPlayer(player);
+						});
+				});
+			})();
+		}
+
+		evt.preventDefault();
+		menu.showAtMouseEvent(evt);
+	}
+
+	/**
 	 * Query the current state of the player backends, and update the icons accordingly.
 	 */
 	private async onUpdatePlayerState() {
-		const playerState = await this.handlers.getPlayerState({ include: { track: { title: true, album: true } } });
+		const playerState = await this.playerManager.getPlayerState({ include: { track: { title: true, album: true } } });
 		this.setPlayerStateIcon(playerState.state);
 		const track = playerState.track;
 		this.setPlayerLabel(track ? `${playerState.track?.artists?.join(', ')} – ${track.title}` : null);
@@ -224,25 +258,25 @@ export default class MusicPlayerPlugin extends Plugin {
 		this.addCommand({
 			id: 'resume-music',
 			name: 'Resume Playback',
-			callback: () => this.handlers.performAction(PlayerAction.Resume)
+			callback: () => this.playerManager.performAction(PlayerAction.Resume)
 		});
 
 		this.addCommand({
 			id: 'pause-music',
 			name: 'Pause Playback',
-			callback: () => this.handlers.performAction(PlayerAction.Pause)
+			callback: () => this.playerManager.performAction(PlayerAction.Pause)
 		});
 
 		this.addCommand({
 			id: 'skip-to-previous-track',
 			name: 'Previous Track',
-			callback: () => this.handlers.performAction(PlayerAction.SkipToPrevious)
+			callback: () => this.playerManager.performAction(PlayerAction.SkipToPrevious)
 		});
 
 		this.addCommand({
 			id: 'skip-to-next-track',
 			name: 'Next Track',
-			callback: () => this.handlers.performAction(PlayerAction.SkipToNext)
+			callback: () => this.playerManager.performAction(PlayerAction.SkipToNext)
 		});
 	}
 }
