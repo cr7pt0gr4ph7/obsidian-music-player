@@ -16,15 +16,6 @@ const statusBarItems: StatusBarItem[] = [
 	StatusBarItem.Next,
 ]
 
-export interface MusicPlayerPluginSettings {
-	spotifyEnabled: boolean;
-	autoLoginEnabled: boolean;
-	showPlayStateInIcon: boolean;
-	changeIconColor: boolean;
-	showTrackInStatusBar: boolean;
-	statusBarLayout: StatusBarItem[];
-}
-
 export const STATUS_BAR_PRESETS: { name: string; icon?: string, layout: StatusBarItem[] }[] = [
 	{ name: "Standard", icon: "music-3", layout: [StatusBarItem.Text, StatusBarItem.Play, StatusBarItem.Prev, StatusBarItem.Next] },
 	{ name: "Compact", icon: "music", layout: [StatusBarItem.Play, StatusBarItem.Text] },
@@ -35,6 +26,15 @@ export const STATUS_BAR_PRESETS: { name: string; icon?: string, layout: StatusBa
 	{ name: "---", layout: [] },
 	{ name: "Customize...", icon: "wrench", layout: [] },
 ];
+
+export interface MusicPlayerPluginSettings {
+	spotifyEnabled: boolean;
+	autoLoginEnabled: boolean;
+	showPlayStateInIcon: boolean;
+	changeIconColor: boolean;
+	showTrackInStatusBar: boolean;
+	statusBarLayout: StatusBarItem[];
+}
 
 export const DEFAULT_SETTINGS: MusicPlayerPluginSettings = {
 	spotifyEnabled: false,
