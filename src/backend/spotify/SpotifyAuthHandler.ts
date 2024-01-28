@@ -79,6 +79,7 @@ export class SpotifyAuthHandler implements AuthService {
 
                 // Required for reading & writing the favorite tracks
                 'user-library-read',
+                'user-library-modify',
                 'playlist-modify-public',
                 'playlist-modify-private',
             ];

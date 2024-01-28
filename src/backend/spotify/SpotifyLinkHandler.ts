@@ -63,17 +63,18 @@ export class SpotifyLinkHandler implements MediaPlayerService {
 						await sdk.player.startResumePlayback('');
 						break;
 					case PlayerAction.AddToFavorites:
-						const targetPlaylist = this.plugin.settings.integrations.spotify.saveToPlaylistId;
-						if (!targetPlaylist || targetPlaylist.length == 0) {
-							new Notice('Cannot add to favorites: No target Spotify playlist defined in settings')
-							break;
-						}
 						const result = await sdk.player.getPlaybackState();
 						if (!result.item?.uri || result.item.uri == '') {
 							break;
 						}
-						console.log(`Add track ${result.item.uri} to ${targetPlaylist}`);
-						await sdk.playlists.addItemsToPlaylist(targetPlaylist, [result.item.uri]);
+						const targetPlaylist = this.plugin.settings.integrations.spotify.saveToPlaylistId;
+						if (targetPlaylist && targetPlaylist.length > 0) {
+							console.log(`Add track ${result.item.uri} to ${targetPlaylist}`);
+							await sdk.playlists.addItemsToPlaylist(targetPlaylist, [result.item.uri]);
+						} else {
+							console.log(`Add track ${result.item.uri} to user's library`)
+							await sdk.currentUser.tracks.saveTracks([result.item.id]);
+						}
 						new Notice('Song added to favorites');
 						break;
 				}
