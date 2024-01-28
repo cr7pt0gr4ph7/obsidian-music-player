@@ -35,7 +35,7 @@ export class SpotifyLinkHandler implements MediaPlayerService {
 
 
 	get auth() {
-		return this.plugin.auth.get(SpotifyAuthHandler);
+		return this.plugin.authManager.get(SpotifyAuthHandler);
 	}
 
 	async performAction(action: PlayerAction) {

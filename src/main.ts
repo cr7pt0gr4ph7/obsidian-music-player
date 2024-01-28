@@ -11,19 +11,19 @@ const DEFAULT_ICON_LABEL = 'Pause / Resume music\n(Ctrl: Prev. Track / Shift: Ne
 export default class MusicPlayerPlugin extends Plugin {
 	playerManager: MediaPlayerManager;
 	settings: MusicPlayerPluginSettings;
-	auth: AuthManager;
+	authManager: AuthManager;
 	interceptor?: LinkInterceptor;
 	ribbonIconEl?: HTMLElement;
 	statusBarTextEl?: HTMLElement;
 	statusBarPlayIcon?: HTMLElement;
+	statusBarItems?: HTMLElement[];
 
 	async onload() {
 		await this.loadSettings();
 
 		this.playerManager = new MediaPlayerManager(this);
-		this.auth = new AuthManager(this);
-		this.auth.register(SpotifyAuthHandler);
-
+		this.authManager = new AuthManager(this);
+		this.authManager.register(SpotifyAuthHandler);
 		this.registerProtocolHandlers();
 		this.registerStatusBarItems();
 		this.registerRibbonIcon();
@@ -72,7 +72,7 @@ export default class MusicPlayerPlugin extends Plugin {
 	 */
 	private registerProtocolHandlers() {
 		this.registerObsidianProtocolHandler('music-player-auth-flow', parameters => {
-			this.auth.receiveAuthFlow(parameters);
+			this.authManager.receiveAuthFlow(parameters);
 		});
 	}
 
@@ -90,11 +90,13 @@ export default class MusicPlayerPlugin extends Plugin {
 	 * Setup: Add status bar items (Note: not available on mobile). 
 	 */
 	private registerStatusBarItems() {
-		type ItemKey = 'play' | 'text' | 'prev' | 'next';
+		this.statusBarItems = this.statusBarItems ?? [];
 
-		var items: Record<ItemKey, () => void> = {
-			play: () => {
+		var items: Record<StatusBarItem, () => void> = {
+			[StatusBarItem.None]: () => { },
+			[StatusBarItem.Play]: () => {
 				const item = this.addStatusBarItem();
+				this.statusBarItems?.push(item);
 				item.addEventListener('click', evt => this.onIconClicked(evt));
 				item.addClass('mod-clickable');
 				item.setAttribute('aria-label', 'Play / Pause');
@@ -102,24 +104,27 @@ export default class MusicPlayerPlugin extends Plugin {
 				setIcon(item, 'play');
 				this.statusBarPlayIcon = item;
 			},
-			text: () => {
+			[StatusBarItem.Text]: () => {
 				const item = this.addStatusBarItem();
+				this.statusBarItems?.push(item);
 				item.addEventListener('click', evt => this.onIconClicked(evt));
 				item.addClass('mod-clickable');
 				item.setAttribute('aria-label', 'Current track');
 				item.setAttribute('data-tooltip-position', 'top');
 				this.statusBarTextEl = item;
 			},
-			prev: () => {
+			[StatusBarItem.Prev]: () => {
 				const item = this.addStatusBarItem();
+				this.statusBarItems?.push(item);
 				item.addEventListener('click', () => this.playerManager.performAction(PlayerAction.SkipToPrevious));
 				item.addClass('mod-clickable');
 				item.setAttribute('aria-label', 'Previous track');
 				item.setAttribute('data-tooltip-position', 'top');
 				setIcon(item, 'skip-back');
 			},
-			next: () => {
+			[StatusBarItem.Next]: () => {
 				const item = this.addStatusBarItem();
+				this.statusBarItems?.push(item);
 				item.addEventListener('click', () => this.playerManager.performAction(PlayerAction.SkipToNext));
 				item.addClass('mod-clickable');
 				item.setAttribute('aria-label', 'Next track');
@@ -128,11 +133,24 @@ export default class MusicPlayerPlugin extends Plugin {
 			}
 		};
 
-		var itemOrder: ItemKey[] = ['text', 'prev', 'play', 'next'];
+		const added = new Set<StatusBarItem>();
 
-		for (const key of itemOrder) {
-			items[key]();
+		for (const key of this.settings.statusBarLayout) {
+			if (added.has(key)) {
+				console.warn(`Music Player | Duplicate uses of the '${key}' status item are not supported, and therefore ignored.`);
+			} else {
+				added.add(key);
 		}
+	}
+	}
+
+	updateStatusBar() {
+		this.statusBarPlayIcon = undefined;
+		this.statusBarTextEl = undefined;
+		this.statusBarItems?.forEach(item => {
+			item.remove();
+		});
+		this.registerStatusBarItems();
 	}
 
 	/**
