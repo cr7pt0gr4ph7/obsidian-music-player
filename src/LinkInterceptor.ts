@@ -1,4 +1,5 @@
 export class LinkInterceptor {
+	static readonly TARGET_EXTERNAL: string = '__external__';
 	private isLoaded: boolean = false;
 	private onOpeningLink: (url: string) => boolean;
 
@@ -7,7 +8,7 @@ export class LinkInterceptor {
 	}
 
 	installHooks() {
-		console.debug("Music Player | Installing hook for window.open()");
+		console.debug('Music Player | Installing hook for window.open()');
 
 		// This is very hacky, but until Obsidian provides a native extension point
 		// for intercepting link navigations that works in all cases (live preview, reading view, source view...),
@@ -23,7 +24,7 @@ export class LinkInterceptor {
 	}
 
 	private onWindowOpenCalled(url?: string | URL, target?: string, features?: string): WindowProxy | null {
-		if (this.isLoaded && url && this.onOpeningLink(url?.toString())) {
+		if (this.isLoaded && target != LinkInterceptor.TARGET_EXTERNAL && url && this.onOpeningLink(url?.toString())) {
 			// Link has been handled by us => Prevent default handling by returning early.
 			return null;
 		}
@@ -33,7 +34,7 @@ export class LinkInterceptor {
 	}
 
 	uninstallHooks() {
-		console.debug("Music Player | Uninstalling hook for window.open()");
+		console.debug('Music Player | Uninstalling hook for window.open()');
 		this.isLoaded = false;
 
 		// @ts-expect-error

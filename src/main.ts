@@ -246,6 +246,18 @@ export default class MusicPlayerPlugin extends Plugin {
 					}
 				}));
 
+		menu.addItem((item) =>
+			item
+				.setTitle("Open in browser")
+				.setIcon("globe")
+				.onClick(async () => {
+					const playerState = await this.playerManager.getPlayerState({ include: { track: { url: true } } });
+					const url = playerState.track?.url;
+					if (url && url.length > 0) {
+						window.open(url, LinkInterceptor.TARGET_EXTERNAL);
+					}
+				}));
+
 		menu.addSeparator();
 
 		menu.addItem((item) =>
