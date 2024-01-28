@@ -1,7 +1,7 @@
 import { AccessToken, AuthorizationCodeWithPKCEStrategy, LocalStorageCachingStrategy, SpotifyApi } from "@spotify/web-api-ts-sdk";
 import MusicPlayerPlugin from "../../main";
 import { Notice } from "obsidian";
-import { AuthService } from "../AuthService";
+import { AuthService } from "../auth/AuthService";
 
 interface SpotifyRedirectParameters {
     target: string;

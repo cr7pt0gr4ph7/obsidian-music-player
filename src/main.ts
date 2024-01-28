@@ -1,12 +1,12 @@
 import { Menu, Notice, Plugin, setIcon } from 'obsidian';
 import { DEFAULT_SETTINGS, MusicPlayerPluginSettings, MusicPlayerSettingsTab, StatusBarItem } from './Settings';
-import { SpotifyAuthHandler } from './backend/handlers/SpotifyAuthHandler';
-import { PlayerAction, PlaybackState } from './backend/MediaPlayerService';
-import { MediaPlayerManager } from './backend/MediaPlayerManager';
-import { AuthManager } from './backend/AuthManager';
+import { SpotifyAuthHandler } from './backend/spotify/SpotifyAuthHandler';
+import { PlayerAction, PlaybackState } from './backend/player/MediaPlayerService';
+import { MediaPlayerManager } from './backend/player/MediaPlayerManager';
+import { AuthManager } from './backend/auth/AuthManager';
 import { LinkInterceptor } from './LinkInterceptor';
 import { CachingLinkResolver, MultiLinkResolver } from './backend/resolvers/LinkResolver';
-import { SpotifyLinkResolver } from './backend/resolvers/SpotifyLinkResolver';
+import { SpotifyLinkResolver } from './backend/spotify/SpotifyLinkResolver';
 
 const DEFAULT_ICON_LABEL = 'Pause / Resume music\n(Ctrl: Prev. Track / Shift: Next Track)';
 

@@ -1,7 +1,7 @@
-import MusicPlayerPlugin from "../main";
+import MusicPlayerPlugin from "../../main";
 import { PlayerAction, PlaybackState, MediaPlayerInfo, MediaPlayerService, PlayerStateOptions, PlayerState } from "./MediaPlayerService";
-import { NopMediaPlayer } from "./handlers/NopMediaPlayer";
-import { SpotifyLinkHandler } from "./handlers/SpotifyLinkHandler";
+import { NopMediaPlayer } from "./NopMediaPlayer";
+import { SpotifyLinkHandler } from "../spotify/SpotifyLinkHandler";
 
 export class MediaPlayerManager implements MediaPlayerService {
 	plugin: MusicPlayerPlugin;

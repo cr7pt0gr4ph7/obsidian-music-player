@@ -1,4 +1,4 @@
-import { MediaPlayerService, PlaybackState, PlayerAction, PlayerState, PlayerStateOptions } from "../MediaPlayerService";
+import { MediaPlayerService, PlaybackState, PlayerAction, PlayerState, PlayerStateOptions } from "./MediaPlayerService";
 
 export class NopMediaPlayer implements MediaPlayerService {
 	get name() {

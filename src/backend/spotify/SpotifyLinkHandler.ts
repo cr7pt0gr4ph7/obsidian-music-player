@@ -1,6 +1,6 @@
 import { SpotifyApi, PlaybackState as SpotifyPlaybackState } from "@spotify/web-api-ts-sdk";
 import MusicPlayerPlugin from "../../main";
-import { PlayerAction, PlaybackState, MediaPlayerService, PlayerStateOptions, PlayerState } from "../MediaPlayerService";
+import { PlayerAction, PlaybackState, MediaPlayerService, PlayerStateOptions, PlayerState } from "../player/MediaPlayerService";
 import { Notice } from "obsidian";
 import { SpotifyAuthHandler } from "./SpotifyAuthHandler";
 

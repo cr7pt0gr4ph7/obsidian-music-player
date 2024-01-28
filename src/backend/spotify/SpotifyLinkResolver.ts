@@ -1,6 +1,6 @@
 import MusicPlayerPlugin from "src/main";
-import { LinkInfo, LinkResolver } from "./LinkResolver";
-import { SpotifyAuthHandler } from "../handlers/SpotifyAuthHandler";
+import { LinkInfo, LinkResolver } from "../resolvers/LinkResolver";
+import { SpotifyAuthHandler } from "./SpotifyAuthHandler";
 
 export class SpotifyLinkResolver implements LinkResolver {
 	readonly plugin: MusicPlayerPlugin;

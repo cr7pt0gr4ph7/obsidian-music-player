@@ -1,4 +1,4 @@
-import { SpotifyAuthHandler } from "./backend/handlers/SpotifyAuthHandler";
+import { SpotifyAuthHandler } from "./backend/spotify/SpotifyAuthHandler";
 import MusicPlayerPlugin from "./main";
 import { PluginSettingTab, App, Setting, DropdownComponent, Menu, Notice } from "obsidian";
 
