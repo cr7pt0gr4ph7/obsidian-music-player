@@ -16,7 +16,7 @@ export class SpotifyLinkHandler implements MediaPlayerService {
 	}
 
 	isEnabled() {
-		return this.plugin.settings.spotifyEnabled;
+		return this.plugin.settings.integrations.spotify.enabled;
 	}
 
 	isLinkSupported(url: string): boolean {

@@ -29,8 +29,11 @@ export const STATUS_BAR_PRESETS: { name: string; icon?: string, layout: StatusBa
 ];
 
 export interface MusicPlayerPluginSettings {
-	spotifyEnabled: boolean;
+	integrations: {
+		spotify: { enabled: boolean; };
+	};
 	autoLoginEnabled: boolean;
+	showTrackInfoOnLinks: boolean;
 	showPlayStateInIcon: boolean;
 	changeIconColor: boolean;
 	showControlsInStatusBar: boolean;
@@ -38,8 +41,11 @@ export interface MusicPlayerPluginSettings {
 }
 
 export const DEFAULT_SETTINGS: MusicPlayerPluginSettings = {
-	spotifyEnabled: false,
+	integrations: {
+		spotify: { enabled: true },
+	},
 	autoLoginEnabled: true,
+	showTrackInfoOnLinks: true,
 	showPlayStateInIcon: true,
 	changeIconColor: true,
 	showControlsInStatusBar: true,
@@ -210,8 +216,8 @@ export class MusicPlayerSettingsTab extends PluginSettingTab {
 					});
 			})
 			.addToggle(cb => {
-				cb.setValue(this.plugin.settings.spotifyEnabled).onChange(data => {
-					this.plugin.settings.spotifyEnabled = data;
+				cb.setValue(this.plugin.settings.integrations.spotify.enabled).onChange(data => {
+					this.plugin.settings.integrations.spotify.enabled = data;
 					this.plugin.saveSettings();
 				});
 			});
