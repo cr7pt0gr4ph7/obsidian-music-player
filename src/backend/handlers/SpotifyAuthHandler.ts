@@ -8,15 +8,20 @@ interface SpotifyRedirectParameters {
     code: string;
 }
 
+const ACCESS_TOKEN_CACHE_KEY = 'spotify-sdk:AuthorizationCodeWithPKCEStrategy:token';
+
 export class SpotifyAuthHandler implements AuthService {
     plugin: MusicPlayerPlugin;
     sdk: SpotifyApi;
 
-    // private readonly cache = new InMemoryCachingStrategy();
     private readonly cache = new LocalStorageCachingStrategy();
 
     constructor(plugin: MusicPlayerPlugin) {
         this.plugin = plugin;
+    }
+
+    logOut() {
+        this.cache.remove(ACCESS_TOKEN_CACHE_KEY);
     }
 
     async withAuthentication<T>(options: { silent: boolean, onAuthenticated: (sdk: SpotifyApi) => Promise<T>, onFailure: () => Promise<T> }): Promise<T> {
@@ -102,10 +107,13 @@ export class SpotifyAuthHandler implements AuthService {
         const strategy = this.sdk.authenticationStrategy as AuthorizationCodeWithPKCEStrategy;
         // @ts-expect-error
         const token = await strategy.verifyAndExchangeCode(code) as AccessToken;
-        this.cache.set('spotify-sdk:AuthorizationCodeWithPKCEStrategy:token', token, SpotifyAuthHandler.calculateExpiry(token));
+        this.cache.set(ACCESS_TOKEN_CACHE_KEY, token, SpotifyAuthHandler.calculateExpiry(token));
     }
 
     static calculateExpiry(item: AccessToken): number {
-        return Date.now() + (item.expires_in * 1000);
+        const now = Date.now();
+        const result = now + (item.expires_in * 1000);
+        console.log(now, item.expires_in, result, new Date(now), new Date(result));
+        return result;
     }
 }
