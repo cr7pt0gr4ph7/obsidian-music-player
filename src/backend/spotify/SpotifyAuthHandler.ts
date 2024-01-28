@@ -70,7 +70,18 @@ export class SpotifyAuthHandler implements AuthService {
         if (!this.sdk) {
             var clientId = 'e42b562de94244ab94dc08303fc2b23a';
             var redirectUri = 'obsidian://music-player-auth-flow?target=spotify';
-            var scopes = ['user-modify-playback-state', 'user-read-playback-state'];
+            var scopes = [
+                // Required for pausing/resuming/skip to next/skip to previous
+                'user-modify-playback-state',
+
+                // Required for determining the currently playing song
+                'user-read-playback-state',
+
+                // Required for reading & writing the favorite tracks
+                'user-library-read',
+                'playlist-modify-public',
+                'playlist-modify-private',
+            ];
             this.sdk = SpotifyApi.withUserAuthorization(clientId, redirectUri, scopes, {
                 cachingStrategy: this.cache
             });

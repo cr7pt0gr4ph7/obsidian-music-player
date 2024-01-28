@@ -5,6 +5,7 @@ import { PluginSettingTab, App, Setting, DropdownComponent, Menu, Notice } from 
 export enum StatusBarItem {
 	None = '',
 	Text = 'text',
+	AddToFavorites = 'add-to-favorites',
 	Play = 'play',
 	Prev = 'prev',
 	Next = 'next',
@@ -15,6 +16,7 @@ const statusBarItems: StatusBarItem[] = [
 	StatusBarItem.Play,
 	StatusBarItem.Prev,
 	StatusBarItem.Next,
+	StatusBarItem.AddToFavorites,
 ]
 
 export const STATUS_BAR_PRESETS: { name: string; icon?: string, layout: StatusBarItem[] }[] = [
@@ -30,7 +32,10 @@ export const STATUS_BAR_PRESETS: { name: string; icon?: string, layout: StatusBa
 
 export interface MusicPlayerPluginSettings {
 	integrations: {
-		spotify: { enabled: boolean; };
+		spotify: {
+			enabled: boolean;
+			saveToPlaylistId: string;
+		};
 	};
 	autoLoginEnabled: boolean;
 	showTrackInfoOnLinks: boolean;
@@ -42,7 +47,10 @@ export interface MusicPlayerPluginSettings {
 
 export const DEFAULT_SETTINGS: MusicPlayerPluginSettings = {
 	integrations: {
-		spotify: { enabled: true },
+		spotify: {
+			enabled: true,
+			saveToPlaylistId: ""
+		},
 	},
 	autoLoginEnabled: true,
 	showTrackInfoOnLinks: true,
@@ -142,6 +150,7 @@ export class MusicPlayerSettingsTab extends PluginSettingTab {
 							[StatusBarItem.Play]: '\u25B6',
 							[StatusBarItem.Prev]: '\u23EE',
 							[StatusBarItem.Next]: '\u23ED',
+							[StatusBarItem.AddToFavorites]: 'Add to favs',
 						})
 							.setValue(layout[i])
 							.onChange(data => {
@@ -232,6 +241,17 @@ export class MusicPlayerSettingsTab extends PluginSettingTab {
 					this.plugin.saveSettings();
 				});
 			});
+
+		new Setting(containerEl)
+			.setName('Save to Spotify playlist')
+			.setDesc('Save new favorites to the specified Spotify playlist.')
+			.addText(cb => {
+				cb.setValue(this.plugin.settings.integrations.spotify.saveToPlaylistId).onChange(data => {
+					this.plugin.settings.integrations.spotify.saveToPlaylistId = data;
+					this.plugin.saveSettings();
+				});
+			});
+
 	}
 }
 function showMenuAtElement(element: HTMLElement, menu: Menu) {

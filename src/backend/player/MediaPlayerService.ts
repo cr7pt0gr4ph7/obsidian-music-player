@@ -1,3 +1,5 @@
+import { TrackInfo } from "src/types/TrackInfo";
+
 export enum PlaybackState {
 	Disconnected = 'disconnected',
 	Playing = 'playing',
@@ -10,17 +12,13 @@ export enum PlayerAction {
 	Resume = 'resume',
 	SkipToPrevious = 'previous',
 	SkipToNext = 'next',
+	AddToFavorites = 'add-to-favorites',
 }
 
 export interface PlayerState {
-	state: PlaybackState,
-	source?: string,
-	track?: {
-		url?: string,
-		title?: string,
-		artists?: string[],
-		album?: string;
-	}
+	state: PlaybackState;
+	source?: string;
+	track?: TrackInfo;
 }
 
 export interface PlayerStateOptions {

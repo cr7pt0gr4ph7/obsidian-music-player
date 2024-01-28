@@ -20,6 +20,7 @@ export default class MusicPlayerPlugin extends Plugin {
 	ribbonIconEl?: HTMLElement;
 	statusBarTextEl?: HTMLElement;
 	statusBarPlayIcon?: HTMLElement;
+	statusBarFavIcon?: HTMLElement;
 	statusBarItems?: HTMLElement[];
 
 	async onload() {
@@ -106,6 +107,17 @@ export default class MusicPlayerPlugin extends Plugin {
 		// TODO: There is a bit of code duplication here, may consider refactoring that
 		var items: Record<StatusBarItem, () => void> = {
 			[StatusBarItem.None]: () => { },
+			[StatusBarItem.AddToFavorites]: () => {
+				const item = this.addStatusBarItem();
+				this.statusBarItems?.push(item);
+				item.addEventListener('click', evt => this.playerManager.performAction(PlayerAction.AddToFavorites));
+				item.addEventListener('contextmenu', evt => this.onIconContextMenu(evt));
+				item.addClass('mod-clickable');
+				item.setAttribute('aria-label', 'Add to favorites');
+				item.setAttribute('data-tooltip-position', 'top');
+				setIcon(item, 'star');
+				this.statusBarFavIcon = item;
+			},
 			[StatusBarItem.Play]: () => {
 				const item = this.addStatusBarItem();
 				this.statusBarItems?.push(item);
@@ -164,6 +176,7 @@ export default class MusicPlayerPlugin extends Plugin {
 	private updateStatusBar() {
 		this.statusBarPlayIcon = undefined;
 		this.statusBarTextEl = undefined;
+		this.statusBarFavIcon = undefined;
 		this.statusBarItems?.forEach(item => {
 			item.remove();
 		});
@@ -295,6 +308,13 @@ export default class MusicPlayerPlugin extends Plugin {
 		this.setPlayerStateIcon(playerState.state);
 		const track = playerState.track;
 		this.setPlayerLabel(track ? `${playerState.track?.artists?.join(', ')} – ${track.title}` : null, playerState.source ?? null);
+		if (this.statusBarFavIcon) {
+			if (track?.is_in_library) {
+				setIcon(this.statusBarFavIcon, "star");
+			} else {
+				setIcon(this.statusBarFavIcon, "star-off");
+			}
+		}
 	}
 
 	private setPlayerLabel(label: string | null, source: string | null) {

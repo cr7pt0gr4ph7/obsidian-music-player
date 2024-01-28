@@ -1,15 +1,9 @@
+import { TrackInfo } from "src/types/TrackInfo";
 import { CacheStrategy, InMemoryCache } from "./CacheStrategy";
 
-export interface LinkInfo {
-	readonly url: string;
-	readonly source: string;
+export interface LinkInfo extends TrackInfo {
 	readonly type: string;
 	readonly title: string;
-	readonly track?: string;
-	readonly artists?: string[];
-	readonly album?: string;
-	readonly release_date?: string;
-	readonly duration_ms?: number;
 }
 
 export interface LinkResolver {
