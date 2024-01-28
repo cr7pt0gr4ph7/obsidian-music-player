@@ -1,10 +1,12 @@
 import { Menu, Notice, Plugin, setIcon } from 'obsidian';
-import { DEFAULT_SETTINGS, MusicPlayerPluginSettings, MusicPlayerSettingsTab } from './Settings';
+import { DEFAULT_SETTINGS, MusicPlayerPluginSettings, MusicPlayerSettingsTab, StatusBarItem } from './Settings';
 import { SpotifyAuthHandler } from './backend/handlers/SpotifyAuthHandler';
 import { PlayerAction, PlaybackState } from './backend/MediaPlayerService';
 import { MediaPlayerManager } from './backend/MediaPlayerManager';
 import { AuthManager } from './backend/AuthManager';
 import { LinkInterceptor } from './LinkInterceptor';
+import { CachingLinkResolver, MultiLinkResolver } from './backend/resolvers/LinkResolver';
+import { SpotifyLinkResolver } from './backend/resolvers/SpotifyLinkResolver';
 
 const DEFAULT_ICON_LABEL = 'Pause / Resume music\n(Ctrl: Prev. Track / Shift: Next Track)';
 
@@ -13,6 +15,7 @@ export default class MusicPlayerPlugin extends Plugin {
 	settings: MusicPlayerPluginSettings;
 	authManager: AuthManager;
 	interceptor?: LinkInterceptor;
+	resolver: CachingLinkResolver;
 	ribbonIconEl?: HTMLElement;
 	statusBarTextEl?: HTMLElement;
 	statusBarPlayIcon?: HTMLElement;
@@ -24,6 +27,11 @@ export default class MusicPlayerPlugin extends Plugin {
 		this.playerManager = new MediaPlayerManager(this);
 		this.authManager = new AuthManager(this);
 		this.authManager.register(SpotifyAuthHandler);
+		this.resolver = new CachingLinkResolver(new MultiLinkResolver([
+			new SpotifyLinkResolver(this)
+		]));
+
+		this.registerHoverHandlers();
 		this.registerProtocolHandlers();
 		this.registerStatusBarItems();
 		this.registerRibbonIcon();
@@ -140,8 +148,9 @@ export default class MusicPlayerPlugin extends Plugin {
 				console.warn(`Music Player | Duplicate uses of the '${key}' status item are not supported, and therefore ignored.`);
 			} else {
 				added.add(key);
+				items[key]();
+			}
 		}
-	}
 	}
 
 	updateStatusBar() {
@@ -365,4 +374,23 @@ export default class MusicPlayerPlugin extends Plugin {
 			callback: () => this.playerManager.performAction(PlayerAction.SkipToNext)
 		});
 	}
+
+	private registerHoverHandlers() {
+		this.registerDomEvent(window, 'mouseover', async (evt) => {
+			if (evt.target instanceof HTMLElement && evt.target.hasClass("external-link")) {
+				const href = evt.target.getAttribute('href');
+				if (!href || href.length == 0) {
+					return;
+				}
+				const linkInfo = await this.resolver.resolveLink(href);
+				if (!linkInfo) {
+					return;
+				}
+				const formattedText = `${linkInfo.source.toUpperCase()}: ${linkInfo.artists?.join(', ')} - ${linkInfo.title}`;
+				evt.target.setAttribute('aria-label', formattedText);
+				evt.target.setAttribute('data-tooltip-position', 'top');
+			}
+		});
+	}
+
 }
