@@ -15,6 +15,10 @@ export class SpotifyLinkHandler implements MediaPlayerService {
 		return "Spotify";
 	}
 
+	isEnabled() {
+		return this.plugin.settings.spotifyEnabled;
+	}
+
 	isLinkSupported(url: string): boolean {
 		return url.startsWith("https://open.spotify.com");
 	}

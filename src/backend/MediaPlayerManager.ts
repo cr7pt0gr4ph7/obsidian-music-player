@@ -5,14 +5,24 @@ import { SpotifyLinkHandler } from "./handlers/SpotifyLinkHandler";
 
 export class MediaPlayerManager implements MediaPlayerService {
 	plugin: MusicPlayerPlugin;
+	allPlayers: MediaPlayerService[];
 	availablePlayers: MediaPlayerService[];
-	activePlayer: MediaPlayerService;
+	activePlayer: MediaPlayerService | null;
 
 	constructor(plugin: MusicPlayerPlugin) {
-		this.availablePlayers = [
+		this.activePlayer = null;
+		this.allPlayers = [
 			new NopMediaPlayer(),
 			new SpotifyLinkHandler(plugin)
 		]
+		this.updateAvailablePlayers();
+	}
+
+	updateAvailablePlayers() {
+		this.availablePlayers = this.allPlayers.filter(player => player.isEnabled());
+		if (this.activePlayer && !this.availablePlayers.contains(this.activePlayer)) {
+			this.activePlayer = null;
+		}
 	}
 
 	getAvailablePlayers(): MediaPlayerService[] {
@@ -35,6 +45,10 @@ export class MediaPlayerManager implements MediaPlayerService {
 
 	get name(): string {
 		return this.activePlayer?.name ?? "No player selected";
+	}
+
+	isEnabled(): boolean {
+		return true;
 	}
 
 	isLinkSupported(url: string): boolean {

@@ -5,6 +5,10 @@ export class NopMediaPlayer implements MediaPlayerService {
 		return "No media player";
 	}
 
+	isEnabled() {
+		return true;
+	}
+
 	isLinkSupported(url: string): boolean {
 		return false;
 	}

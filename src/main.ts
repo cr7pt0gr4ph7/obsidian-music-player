@@ -72,6 +72,8 @@ export default class MusicPlayerPlugin extends Plugin {
 	}
 
 	async saveSettings() {
+		this.playerManager.updateAvailablePlayers();
+		this.updateStatusBar();
 		await this.saveData(this.settings);
 	}
 
@@ -158,7 +160,7 @@ export default class MusicPlayerPlugin extends Plugin {
 		}
 	}
 
-	updateStatusBar() {
+	private updateStatusBar() {
 		this.statusBarPlayIcon = undefined;
 		this.statusBarTextEl = undefined;
 		this.statusBarItems?.forEach(item => {

@@ -17,7 +17,7 @@ const statusBarItems: StatusBarItem[] = [
 ]
 
 export const STATUS_BAR_PRESETS: { name: string; icon?: string, layout: StatusBarItem[] }[] = [
-	{ name: "Standard", icon: "music-3", layout: [StatusBarItem.Text, StatusBarItem.Play, StatusBarItem.Prev, StatusBarItem.Next] },
+	{ name: "Standard", icon: "music-3", layout: [StatusBarItem.Text, StatusBarItem.Prev, StatusBarItem.Play, StatusBarItem.Next] },
 	{ name: "Compact", icon: "music", layout: [StatusBarItem.Play, StatusBarItem.Text] },
 	{ name: "Ultra-compact", icon: "music-4", layout: [StatusBarItem.Play] },
 	{ name: "---", layout: [] },
@@ -59,29 +59,7 @@ export class MusicPlayerSettingsTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName('Spotify')
-			.setDesc('Enable the Spotify integration.')
-			.addToggle(cb => {
-				cb.setValue(this.plugin.settings.spotifyEnabled).onChange(data => {
-					this.plugin.settings.spotifyEnabled = data;
-					this.plugin.saveSettings();
-				});
-			});
-
-
-		new Setting(containerEl)
-			.setName('Auto-login on startup')
-			.setDesc('Enable automatic login on app startup.')
-			.addToggle(cb => {
-				cb.setValue(this.plugin.settings.autoLoginEnabled).onChange(data => {
-					this.plugin.settings.autoLoginEnabled = data;
-					this.plugin.saveSettings();
-				});
-			});
-
-
-		new Setting(containerEl)
-			.setName('Show playback state via icon')
+			.setName('Show playback state via icon image')
 			.addToggle(cb => {
 				cb.setValue(this.plugin.settings.showPlayStateInIcon).onChange(data => {
 					this.plugin.settings.showPlayStateInIcon = data;
@@ -134,7 +112,6 @@ export class MusicPlayerSettingsTab extends PluginSettingTab {
 				reloadStatusBarLayout = () => {
 					layout = getLayout();
 					dropdowns.forEach((cb, i) => cb.setValue(layout[i]));
-					this.plugin.updateStatusBar();
 					this.plugin.saveSettings();
 				};
 
@@ -152,7 +129,6 @@ export class MusicPlayerSettingsTab extends PluginSettingTab {
 							.onChange(data => {
 								layout[i] = data as StatusBarItem;
 								this.plugin.settings.statusBarLayout = Array.from(layout);
-								this.plugin.updateStatusBar();
 								this.plugin.saveSettings();
 							});
 					});
@@ -193,6 +169,29 @@ export class MusicPlayerSettingsTab extends PluginSettingTab {
 							}, cb.extraSettingsEl.doc);
 						})
 				);
+			});
+
+
+		containerEl.createEl('h2', { text: 'Player Integrations' });
+
+		new Setting(containerEl)
+			.setName('Auto-login on startup')
+			.setDesc('Enable automatic login on app startup.')
+			.addToggle(cb => {
+				cb.setValue(this.plugin.settings.autoLoginEnabled).onChange(data => {
+					this.plugin.settings.autoLoginEnabled = data;
+					this.plugin.saveSettings();
+				});
+			});
+
+		new Setting(containerEl)
+			.setName('Spotify')
+			.setDesc('Enable the Spotify integration.')
+			.addToggle(cb => {
+				cb.setValue(this.plugin.settings.spotifyEnabled).onChange(data => {
+					this.plugin.settings.spotifyEnabled = data;
+					this.plugin.saveSettings();
+				});
 			});
 	}
 }
