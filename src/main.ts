@@ -304,7 +304,7 @@ export default class MusicPlayerPlugin extends Plugin {
 	 * Query the current state of the player backends, and update the icons accordingly.
 	 */
 	private async onUpdatePlayerState() {
-		const playerState = await this.playerManager.getPlayerState({ include: { track: { title: true, album: true } } });
+		const playerState = await this.playerManager.getPlayerState({ include: { track: { title: true, album: true, is_in_library: true } } });
 		this.setPlayerStateIcon(playerState.state);
 		const track = playerState.track;
 		this.setPlayerLabel(track ? `${playerState.track?.artists?.join(', ')} – ${track.title}` : null, playerState.source ?? null);

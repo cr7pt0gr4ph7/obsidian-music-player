@@ -71,11 +71,12 @@ export class SpotifyLinkHandler implements MediaPlayerService {
 						if (targetPlaylist && targetPlaylist.length > 0) {
 							console.log(`Add track ${result.item.uri} to ${targetPlaylist}`);
 							await sdk.playlists.addItemsToPlaylist(targetPlaylist, [result.item.uri]);
+							new Notice('Song added to playlist');
 						} else {
 							console.log(`Add track ${result.item.uri} to user's library`)
 							await sdk.currentUser.tracks.saveTracks([result.item.id]);
+							new Notice('Song added to favorites');
 						}
-						new Notice('Song added to favorites');
 						break;
 				}
 			},
