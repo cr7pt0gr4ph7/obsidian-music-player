@@ -32,7 +32,7 @@ export interface MusicPlayerPluginSettings {
 	autoLoginEnabled: boolean;
 	showPlayStateInIcon: boolean;
 	changeIconColor: boolean;
-	showTrackInStatusBar: boolean;
+	showControlsInStatusBar: boolean;
 	statusBarLayout: StatusBarItem[];
 }
 
@@ -41,7 +41,7 @@ export const DEFAULT_SETTINGS: MusicPlayerPluginSettings = {
 	autoLoginEnabled: true,
 	showPlayStateInIcon: true,
 	changeIconColor: true,
-	showTrackInStatusBar: true,
+	showControlsInStatusBar: true,
 	statusBarLayout: [StatusBarItem.Text, StatusBarItem.Play, StatusBarItem.Prev, StatusBarItem.Next],
 }
 
@@ -102,8 +102,8 @@ export class MusicPlayerSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Show controls in status bar')
 			.addToggle(cb => {
-				cb.setValue(this.plugin.settings.showTrackInStatusBar).onChange(data => {
-					this.plugin.settings.showTrackInStatusBar = data;
+				cb.setValue(this.plugin.settings.showControlsInStatusBar).onChange(data => {
+					this.plugin.settings.showControlsInStatusBar = data;
 					this.plugin.saveSettings();
 				});
 			});

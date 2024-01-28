@@ -282,7 +282,7 @@ export default class MusicPlayerPlugin extends Plugin {
 			label = null;
 		}
 
-		if (label && this.settings.showTrackInStatusBar) {
+		if (label && this.settings.showControlsInStatusBar) {
 			this.statusBarTextEl?.show();
 		} else {
 			this.statusBarTextEl?.hide();
