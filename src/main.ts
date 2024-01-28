@@ -1,3 +1,4 @@
+import { Duration } from "luxon";
 import { Menu, Notice, Plugin, setIcon } from 'obsidian';
 import { DEFAULT_SETTINGS, MusicPlayerPluginSettings, MusicPlayerSettingsTab, StatusBarItem } from './Settings';
 import { SpotifyAuthHandler } from './backend/spotify/SpotifyAuthHandler';
@@ -5,7 +6,7 @@ import { PlayerAction, PlaybackState } from './backend/player/MediaPlayerService
 import { MediaPlayerManager } from './backend/player/MediaPlayerManager';
 import { AuthManager } from './backend/auth/AuthManager';
 import { LinkInterceptor } from './LinkInterceptor';
-import { CachingLinkResolver, MultiLinkResolver } from './backend/resolvers/LinkResolver';
+import { CachingLinkResolver, LinkInfo, MultiLinkResolver } from './backend/resolvers/LinkResolver';
 import { SpotifyLinkResolver } from './backend/spotify/SpotifyLinkResolver';
 
 const DEFAULT_ICON_LABEL = 'Pause / Resume music\n(Ctrl: Prev. Track / Shift: Next Track)';
@@ -396,6 +397,10 @@ export default class MusicPlayerPlugin extends Plugin {
 
 	private registerHoverHandlers() {
 		this.registerDomEvent(window, 'mouseover', async (evt) => {
+			if (!this.settings.showTrackInfoOnLinks) {
+				return;
+			}
+
 			if (evt.target instanceof HTMLElement && evt.target.hasClass("external-link")) {
 				const href = evt.target.getAttribute('href');
 				if (!href || href.length == 0) {
@@ -405,11 +410,47 @@ export default class MusicPlayerPlugin extends Plugin {
 				if (!linkInfo) {
 					return;
 				}
-				const formattedText = `${linkInfo.source.toUpperCase()}: ${linkInfo.artists?.join(', ')} - ${linkInfo.title}`;
+
+				const formattedText = this.formatLinkInfo(linkInfo);
 				evt.target.setAttribute('aria-label', formattedText);
 				evt.target.setAttribute('data-tooltip-position', 'top');
 			}
 		});
 	}
 
+	private formatLinkInfo(linkInfo: LinkInfo) {
+		var result = "";
+		var hasSource = false;
+		var hasArtists = false;
+		var hasTitle = false;
+		if (linkInfo.source && linkInfo.source.length > 0) {
+			result += linkInfo.source.toUpperCase();
+			hasSource = true;
+		}
+		if (linkInfo.artists && linkInfo.artists.length > 0) {
+			if (hasSource) {
+				result += ': ';
+			}
+			result += linkInfo.artists.join(', ');
+			hasArtists = true;
+		}
+		if (linkInfo.title) {
+			if (hasArtists) {
+				result += ' – ';
+			} else if (hasSource) {
+				result += ': ';
+			}
+			result += linkInfo.title;
+			hasTitle = true;
+		}
+		if (linkInfo.duration_ms) {
+			if (hasSource || hasArtists || hasTitle) {
+				result += ' ';
+			}
+			const duration = Duration.fromMillis(linkInfo.duration_ms);
+			result += `(${duration.toFormat(duration.hours > 1 ? 'h:mm:ss' : 'm:ss')})`;
+		}
+		console.log(result);
+		return result;
+	}
 }

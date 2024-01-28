@@ -9,12 +9,20 @@ export class SpotifyLinkResolver implements LinkResolver {
 		this.plugin = plugin;
 	}
 
+	isEnabled() {
+		return this.plugin.settings.integrations.spotify.enabled;
+	}
+
 	async resolveLink(url: string): Promise<LinkInfo | null> {
+		if (!this.isEnabled()) {
+			return null;
+		}
+
 		return await this.plugin.authManager.get(SpotifyAuthHandler).withAuthentication<LinkInfo | null>({
 			silent: true,
 			onAuthenticated: async sdk => {
-				const regex = /https:\/\/open\.spotify\.com\/track\/(?<track_id>.*)($|\?)/;
-				const trackId = url.match(regex)?.[1];
+				const regex = /https:\/\/open\.spotify\.com\/(intl-[a-z]+\/)?track\/(?<track_id>.*)($|\?)/;
+				const trackId = url.match(regex)?.[2];
 				if (trackId) {
 					const result = await sdk.tracks.get(trackId);
 					return {
@@ -25,6 +33,8 @@ export class SpotifyLinkResolver implements LinkResolver {
 						track: result.name,
 						artists: result.artists.map(a => a.name),
 						album: result.album.name,
+						release_date: result.album.release_date,
+						duration_ms: result.duration_ms,
 					};
 				} else {
 					return null;

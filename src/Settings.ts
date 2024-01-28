@@ -66,6 +66,17 @@ export class MusicPlayerSettingsTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
+			.setName('Show track info on links')
+			.setDesc('Show information about the linked-to track when hovering over a link, if available.')
+			.addToggle(cb => {
+				cb.setValue(this.plugin.settings.showTrackInfoOnLinks).onChange(data => {
+					this.plugin.settings.showTrackInfoOnLinks = data;
+					this.plugin.saveSettings();
+				});
+			});
+
+
+		new Setting(containerEl)
 			.setName('Show playback state via icon image')
 			.addToggle(cb => {
 				cb.setValue(this.plugin.settings.showPlayStateInIcon).onChange(data => {

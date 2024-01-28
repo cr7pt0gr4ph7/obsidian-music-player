@@ -8,6 +8,8 @@ export interface LinkInfo {
 	readonly track?: string;
 	readonly artists?: string[];
 	readonly album?: string;
+	readonly release_date?: string;
+	readonly duration_ms?: number;
 }
 
 export interface LinkResolver {
