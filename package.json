@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-music-player",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Play music right from within your Obsidian vault via an embedded music player.",
 	"main": "main.js",
 	"scripts": {
