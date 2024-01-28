@@ -100,12 +100,14 @@ export default class MusicPlayerPlugin extends Plugin {
 	private registerStatusBarItems() {
 		this.statusBarItems = this.statusBarItems ?? [];
 
+		// TODO: There is a bit of code duplication here, may consider refactoring that
 		var items: Record<StatusBarItem, () => void> = {
 			[StatusBarItem.None]: () => { },
 			[StatusBarItem.Play]: () => {
 				const item = this.addStatusBarItem();
 				this.statusBarItems?.push(item);
 				item.addEventListener('click', evt => this.onIconClicked(evt));
+				item.addEventListener('contextmenu', evt => this.onIconContextMenu(evt));
 				item.addClass('mod-clickable');
 				item.setAttribute('aria-label', 'Play / Pause');
 				item.setAttribute('data-tooltip-position', 'top');
@@ -116,6 +118,7 @@ export default class MusicPlayerPlugin extends Plugin {
 				const item = this.addStatusBarItem();
 				this.statusBarItems?.push(item);
 				item.addEventListener('click', evt => this.onIconClicked(evt));
+				item.addEventListener('contextmenu', evt => this.onIconContextMenu(evt));
 				item.addClass('mod-clickable');
 				item.setAttribute('aria-label', 'Current track');
 				item.setAttribute('data-tooltip-position', 'top');
@@ -125,6 +128,7 @@ export default class MusicPlayerPlugin extends Plugin {
 				const item = this.addStatusBarItem();
 				this.statusBarItems?.push(item);
 				item.addEventListener('click', () => this.playerManager.performAction(PlayerAction.SkipToPrevious));
+				item.addEventListener('contextmenu', evt => this.onIconContextMenu(evt));
 				item.addClass('mod-clickable');
 				item.setAttribute('aria-label', 'Previous track');
 				item.setAttribute('data-tooltip-position', 'top');
@@ -134,6 +138,7 @@ export default class MusicPlayerPlugin extends Plugin {
 				const item = this.addStatusBarItem();
 				this.statusBarItems?.push(item);
 				item.addEventListener('click', () => this.playerManager.performAction(PlayerAction.SkipToNext));
+				item.addEventListener('contextmenu', evt => this.onIconContextMenu(evt));
 				item.addClass('mod-clickable');
 				item.setAttribute('aria-label', 'Next track');
 				item.setAttribute('data-tooltip-position', 'top');
